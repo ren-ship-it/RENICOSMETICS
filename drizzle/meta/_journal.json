@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1774522256412,
+      "tag": "0000_past_trauma",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1774522355109,
+      "tag": "0001_concerned_the_twelve",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775957213143,
+      "tag": "0002_flimsy_omega_flight",
+      "breakpoints": true
+    }
+  ]
+}
