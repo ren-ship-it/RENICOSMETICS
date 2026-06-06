@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingBag, Menu, X, ChevronDown } from "lucide-react";
+import { ShoppingBag, Menu, X, ChevronDown, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 // Cream/white logo — always used (navbar is always dark-bg or white-bg)
@@ -230,6 +230,12 @@ export default function Navbar() {
 
             {/* Right icons */}
             <div className="flex items-center gap-5">
+              {/* Account */}
+              <Link href="/account">
+                <button aria-label="My account" className="hover:opacity-60 transition-opacity">
+                  <User size={18} color={iconColor} />
+                </button>
+              </Link>
               {/* Cart */}
               <Link href="/cart">
                 <button aria-label={`Cart (${count} items)`} className="relative hover:opacity-60 transition-opacity">

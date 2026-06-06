@@ -56,18 +56,28 @@ Each item uses the requested format. Status tags:
 
 ## Priority 2 — Security & access control
 
-### 2.1 No customer authentication system [TODO]
-- **Issue:** Auth is Manus OAuth for admins only. There is no customer account
-  system at all (the brief requires signup, login/logout, password reset, order
-  history, saved details, communication/marketing preferences).
-- **Why it matters:** Core ecommerce functionality and a compliance surface
-  (consent/preferences) are missing.
-- **Recommended fix:** Add a `customers` auth flow: password hashing (argon2/
-  bcrypt), JWT/session via the existing `jose` setup, protected customer routes,
-  RBAC (`user` vs `admin` already in `users` enum), rate-limited login, password
-  reset tokens, MFA-ready schema. Build branded UI (see Priority 7).
-- **Files:** new `server/auth/*`, `drizzle/schema.ts`, `client/src/pages/account/*`.
-- **Risk if ignored:** No accounts, no order history, weak retention, manual support.
+### 2.1 No customer authentication system [DONE]
+- **Issue (was):** Auth was Manus OAuth for admins only; no customer accounts.
+- **Implemented:** First-party customer auth, fully separate from admin:
+  - scrypt password hashing with per-password salt + constant-time verify
+    (`server/auth/password.ts`, unit-tested); no external dependency.
+  - JWT session via `jose` in a dedicated httpOnly cookie
+    (`server/auth/session.ts`); verified into the tRPC context with a new
+    `customerProcedure` (`server/_core/context.ts`, `trpc.ts`).
+  - `customerAuth` router: signup (claims existing guest records), login
+    (non-enumerating), logout, me, password reset (single-use, hashed,
+    time-limited tokens), profile update, marketing-consent update, order
+    history, security log (`server/auth/router.ts`, `store.ts`).
+  - Audit logging of all sensitive events with hashed IP (`authAuditLog`).
+  - Strict rate limiter on `/api/trpc/customerAuth` (brute-force defence).
+  - Branded UI: `/account` (sign in / create account / forgot password →
+    dashboard with profile, order history, comms preferences, sign out) and
+    `/reset-password`; account icon in the navbar.
+- **Files:** `server/auth/*`, `drizzle/schema.ts` (customers auth fields,
+  `passwordResetTokens`, `authAuditLog`), `client/src/pages/AccountPage.tsx`,
+  `ResetPasswordPage.tsx`, `hooks/useCustomerAuth.ts`, `App.tsx`, `Navbar.tsx`.
+- **Remaining:** password-reset + welcome emails (Priority 11); optional email
+  verification; MFA (schema is ready to extend).
 
 ### 2.2 CSP disabled; CSRF posture unverified [PARTIAL]
 - **Issue:** `helmet({ contentSecurityPolicy: false })` in
@@ -80,11 +90,12 @@ Each item uses the requested format. Status tags:
 - **Files:** `server/_core/index.ts`, `server/_core/cookies.ts`.
 - **Risk if ignored:** Account/admin compromise.
 
-### 2.3 Brute-force protection only on chat [PARTIAL]
-- **Issue:** Global + chat rate limits exist; once customer login lands it needs
-  its own strict limiter and lockout.
-- **Recommended fix:** Add a per-account/IP login limiter and exponential backoff.
-- **Files:** `server/_core/index.ts`, future auth router.
+### 2.3 Brute-force protection [DONE for customer auth]
+- **Implemented:** A strict limiter (30 / 15 min) now guards
+  `/api/trpc/customerAuth`, plus generic non-enumerating login responses and
+  audit logging of failures.
+- **Files:** `server/_core/index.ts`, `server/auth/router.ts`.
+- **Remaining:** consider per-account lockout/backoff; admin login is OAuth (2.x/7).
 
 ### 2.4 Admin AI / analytics endpoints — access [DONE]
 - **Status:** `analytics.*` admin endpoints use `adminProcedure` (403 for
@@ -296,7 +307,7 @@ Each item uses the requested format. Status tags:
 ## Suggested execution order (next sessions)
 
 1. ~~**1.1–1.3** order webhook + stock decrement + lazy Stripe~~ **[DONE]** — commerce unblocked.
-2. **2.1 + 7** first-party branded auth (customer + admin), de-Manus.
+2. ~~**2.1** first-party branded customer auth~~ **[DONE]**. Admin de-Manus (7) still pending — flagged: removing Manus OAuth may break the hosted admin login, so confirm approach first.
 3. **3.1** DB as product source of truth.
 4. **4.1–4.3 + 11** order emails, history, shipping rules, server email.
 5. **5** domain-event bus wiring (uses analytics recompute/alerts already built).

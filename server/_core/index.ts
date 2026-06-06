@@ -69,6 +69,16 @@ async function startServer() {
   });
   app.use("/api/trpc/chat", chatLimiter);
 
+  // Strict limiter for auth endpoints — brute-force / credential-stuffing defence.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many attempts. Please wait a few minutes and try again." },
+  });
+  app.use("/api/trpc/customerAuth", authLimiter);
+
   // Configure body parser with reasonable size limit
   app.use(express.json({ limit: "5mb" }));
   app.use(express.urlencoded({ limit: "5mb", extended: true }));

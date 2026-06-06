@@ -43,3 +43,21 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// Storefront customer auth — entirely separate from the admin (`user`) session.
+export const customerProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+
+    if (!ctx.customer) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in to your account." });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        customer: ctx.customer,
+      },
+    });
+  }),
+);

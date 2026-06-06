@@ -76,12 +76,53 @@ export const customers = mysqlTable("customers", {
   acceptsMarketing: boolean("acceptsMarketing").default(false),
   totalOrders: int("totalOrders").default(0).notNull(),
   totalSpent: decimal("totalSpent", { precision: 10, scale: 2 }).default("0"),
+  // ── Authentication (first-party customer accounts) ──
+  // Null for guest checkout records that have never set a password. Stored as a
+  // self-describing scrypt hash string; never the raw password.
+  passwordHash: varchar("passwordHash", { length: 256 }),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  lastLoginAt: timestamp("lastLoginAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = typeof customers.$inferInsert;
+
+// ─── Password Reset Tokens ────────────────────────────────────────────────────
+// Only the SHA-256 hash of the token is stored, so a database leak cannot be
+// used to reset accounts. Tokens are single-use and time-limited.
+export const passwordResetTokens = mysqlTable("passwordResetTokens", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  tokenHash: varchar("tokenHash", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// ─── Auth Audit Log ───────────────────────────────────────────────────────────
+// Security audit trail for authentication-sensitive events (logins, signups,
+// password resets, preference changes). IP is hashed, never stored raw.
+export const authAuditLog = mysqlTable("authAuditLog", {
+  id: int("id").autoincrement().primaryKey(),
+  actorType: mysqlEnum("actorType", ["customer", "admin", "anonymous"]).default("customer").notNull(),
+  actorId: varchar("actorId", { length: 64 }),
+  email: varchar("email", { length: 320 }),
+  // login_success | login_fail | signup | logout | password_reset_request |
+  // password_reset | profile_update | consent_update
+  event: varchar("event", { length: 48 }).notNull(),
+  success: boolean("success").default(true).notNull(),
+  ipHash: varchar("ipHash", { length: 64 }),
+  userAgent: varchar("userAgent", { length: 512 }),
+  detail: varchar("detail", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuthAuditLog = typeof authAuditLog.$inferSelect;
+export type InsertAuthAuditLog = typeof authAuditLog.$inferInsert;
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 export const orders = mysqlTable("orders", {

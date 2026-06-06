@@ -10,6 +10,7 @@ import * as db from "./db";
 import { analyticsRouter } from "./analytics/router";
 import { logAiDecision } from "./analytics/decisionLog";
 import { getStripe } from "./_core/stripe";
+import { customerAuthRouter } from "./auth/router";
 
 //  Chat Persona System
 
@@ -184,6 +185,10 @@ export const appRouter = router({
   // Analytics & Intelligence layer (consent-gated ingestion, BI insights,
   // ML outputs, proactive alerts, and the admin-only AI business assistant).
   analytics: analyticsRouter,
+
+  // First-party customer accounts (signup, login, password reset, profile,
+  // order history, marketing-consent management). Separate from admin auth.
+  customerAuth: customerAuthRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

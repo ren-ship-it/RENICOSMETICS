@@ -31,6 +31,8 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import LayeringGuidePage from "./pages/LayeringGuidePage";
 import ReferralPage from "./pages/ReferralPage";
+import AccountPage from "./pages/AccountPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { lazy, Suspense } from "react";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -92,6 +94,8 @@ function Router() {
         <Route path="/order-confirmation" component={OrderConfirmationPage} />
         <Route path="/layering-guide" component={LayeringGuidePage} />
         <Route path="/referral" component={ReferralPage} />
+        <Route path="/account" component={AccountPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         {/* Admin routes — protected, lazy-loaded */}
         <Route path="/admin">
           <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>
