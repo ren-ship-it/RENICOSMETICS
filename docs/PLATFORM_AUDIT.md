@@ -183,19 +183,26 @@ Each item uses the requested format. Status tags:
 
 ---
 
-## Priority 7 — Branding & authentication (de-white-label) [TODO]
-- **Issue:** Admin auth is **Manus OAuth** (third-party). The brief forbids any
-  third-party/white-label branding, URLs or remnants across login, admin, emails
-  and dashboards. `__manus__` assets exist under `client/public`. Account areas
-  don't exist yet to brand.
-- **Why it matters:** The platform must feel fully owned; Manus references are a
-  white-label remnant.
-- **Recommended fix:** Replace OAuth admin login with a first-party, fully branded
-  auth system (shared with customer accounts, RBAC-separated). Audit and remove
-  `__manus__`/Manus references from public assets, metadata and emails. Build
-  branded login/reset/account screens in the Reni design system.
-- **Files:** `server/_core/oauth.ts`, `client/public/__manus__/*`, auth UI, emails.
-- **Risk if ignored:** Brand integrity; lock-in; the explicit requirement unmet.
+## Priority 7 — Branding & authentication (de-white-label) [PARTIAL]
+- **Issue:** Admin auth was Manus OAuth only (third-party). The brief wants
+  brand-owned auth with no third-party remnants. `__manus__` assets exist under
+  `client/public`.
+- **Implemented (per your decision — parallel, low-risk):** A brand-owned
+  first-party admin login now runs ALONGSIDE Manus OAuth:
+  - `adminAuth` router (email + password) → short-lived (12h) admin session
+    cookie, resolved into `ctx.user` so all `adminProcedure` checks are unchanged
+    (`server/auth/adminRouter.ts`, `adminSession.ts`, `server/_core/context.ts`).
+  - Branded `/admin/login` page; `AdminGuard` now redirects there (not to `/`);
+    OAuth remains available via a secondary link.
+  - No hardcoded credentials: bootstrap via `pnpm admin:create <email> <pw>`
+    (`scripts/createAdmin.ts`); `users.passwordHash` added; logout clears both
+    sessions; rate-limited; audit-logged.
+- **Remaining:** customer-facing auth/account screens are already branded (P2);
+  audit/remove `__manus__` references from public assets, page metadata and
+  (pending) emails; optionally retire OAuth once the first-party admin is verified
+  in production.
+- **Files:** `server/auth/adminRouter.ts`, `adminSession.ts`, `server/_core/context.ts`,
+  `routers.ts`, `scripts/createAdmin.ts`, `client/src/pages/admin/AdminLogin.tsx`, `App.tsx`.
 
 ---
 

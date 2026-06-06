@@ -49,14 +49,17 @@ describe("auth.logout", () => {
     const result = await caller.auth.logout();
 
     expect(result).toEqual({ success: true });
-    expect(clearedCookies).toHaveLength(1);
-    expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
-    expect(clearedCookies[0]?.options).toMatchObject({
+    // Logout clears both the Manus OAuth session and the first-party admin
+    // session cookie, so an admin who signed in either way is fully logged out.
+    const sessionCookie = clearedCookies.find(c => c.name === COOKIE_NAME);
+    expect(sessionCookie).toBeDefined();
+    expect(sessionCookie?.options).toMatchObject({
       maxAge: -1,
       secure: true,
       sameSite: "none",
       httpOnly: true,
       path: "/",
     });
+    expect(clearedCookies.find(c => c.name === "reni_admin_session")).toBeDefined();
   });
 });

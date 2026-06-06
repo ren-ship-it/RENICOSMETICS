@@ -78,6 +78,7 @@ async function startServer() {
     message: { error: "Too many attempts. Please wait a few minutes and try again." },
   });
   app.use("/api/trpc/customerAuth", authLimiter);
+  app.use("/api/trpc/adminAuth", authLimiter);
 
   // Configure body parser with reasonable size limit
   app.use(express.json({ limit: "5mb" }));

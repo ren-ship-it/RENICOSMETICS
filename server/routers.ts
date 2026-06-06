@@ -11,6 +11,8 @@ import { analyticsRouter } from "./analytics/router";
 import { logAiDecision } from "./analytics/decisionLog";
 import { getStripe } from "./_core/stripe";
 import { customerAuthRouter } from "./auth/router";
+import { adminAuthRouter } from "./auth/adminRouter";
+import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
 //  Chat Persona System
 
@@ -190,11 +192,16 @@ export const appRouter = router({
   // order history, marketing-consent management). Separate from admin auth.
   customerAuth: customerAuthRouter,
 
+  // First-party admin login (brand-owned, parallel to Manus OAuth).
+  adminAuth: adminAuthRouter,
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Also clear the first-party admin session so logout works for both paths.
+      ctx.res.clearCookie(ADMIN_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
   }),

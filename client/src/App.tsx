@@ -45,6 +45,7 @@ const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
 const AdminChatLogs = lazy(() => import("./pages/admin/AdminChatLogs"));
@@ -61,7 +62,7 @@ function AdminGuard({ component: Component }: { component: React.ComponentType }
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
   if (loading) return <div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>;
-  if (!user || user.role !== "admin") { navigate("/"); return null; }
+  if (!user || user.role !== "admin") { navigate("/admin/login"); return null; }
   return <Component />;
 }
 
@@ -96,6 +97,12 @@ function Router() {
         <Route path="/referral" component={ReferralPage} />
         <Route path="/account" component={AccountPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
+        {/* Admin login — brand-owned, not behind the guard */}
+        <Route path="/admin/login">
+          <Suspense fallback={<div className="min-h-screen bg-[#0f0f0f]" />}>
+            <AdminLogin />
+          </Suspense>
+        </Route>
         {/* Admin routes — protected, lazy-loaded */}
         <Route path="/admin">
           <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>

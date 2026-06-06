@@ -50,6 +50,35 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0];
+}
+
+/**
+ * Create or update a first-party admin (email + password). Used by the bootstrap
+ * script. openId is synthesised for local admins so the unique constraint holds.
+ */
+export async function upsertLocalAdmin(email: string, passwordHash: string, name?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const openId = `local:${email.toLowerCase()}`;
+  await db
+    .insert(users)
+    .values({ openId, email, name: name ?? email, loginMethod: "password", role: "admin", passwordHash })
+    .onDuplicateKeyUpdate({ set: { passwordHash, role: "admin", name: name ?? undefined, loginMethod: "password" } });
+  return getUserByOpenId(openId);
+}
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 export async function getAllProducts(opts?: { search?: string; available?: boolean }) {
   const db = await getDb();
