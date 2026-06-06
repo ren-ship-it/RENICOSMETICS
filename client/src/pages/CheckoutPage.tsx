@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { computeShipping } from "@shared/shipping";
 
 const STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
@@ -53,7 +54,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"details" | "payment">("details");
 
   const totalNum = items.reduce((s, i) => s + i.priceNum * i.quantity, 0);
-  const shipping = totalNum >= 150 ? 0 : 9.95;
+  const shipping = computeShipping(totalNum);
   const orderTotal = totalNum + shipping;
 
   const createSession = trpc.checkout.createSession.useMutation({

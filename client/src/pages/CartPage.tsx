@@ -8,14 +8,12 @@ import ImageSkeleton from "@/components/ImageSkeleton";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { PHASE1_PRODUCTS } from "@/data/products";
-
-const FREE_SHIPPING_THRESHOLD = 150;
-const MIN_SPEND = 150;
+import { FREE_SHIPPING_THRESHOLD, MINIMUM_ORDER_VALUE, STANDARD_SHIPPING_COST } from "@shared/shipping";
 
 export default function CartPage() {
   const { items, count, total, removeItem, updateQty, clearCart, addItem } = useCart();
   const totalNum = items.reduce((s, i) => s + i.priceNum * i.quantity, 0);
-  const meetsMinSpend = totalNum >= MIN_SPEND;
+  const meetsMinSpend = totalNum >= MINIMUM_ORDER_VALUE;
   const freeShipping = totalNum >= FREE_SHIPPING_THRESHOLD;
 
   useSEO({
@@ -253,7 +251,7 @@ export default function CartPage() {
                     <div className="flex justify-between">
                       <span className="text-xs" style={{ color: "rgba(45,44,44,0.6)" }}>Shipping</span>
                       <span className="text-xs font-medium" style={{ color: freeShipping ? "#6B7A3E" : "#2D2C2C" }}>
-                        {freeShipping ? "Free" : "Calculated at checkout"}
+                        {freeShipping ? "Free" : `$${STANDARD_SHIPPING_COST.toFixed(2)}`}
                       </span>
                     </div>
                     <div className="w-full h-px" style={{ background: "rgba(45,44,44,0.12)" }} />
@@ -265,16 +263,6 @@ export default function CartPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Min spend warning */}
-                  {!meetsMinSpend && (
-                    <div
-                      className="text-xs p-3 mb-4 text-center"
-                      style={{ background: "rgba(45,44,44,0.08)", color: "rgba(45,44,44,0.6)" }}
-                    >
-                      Minimum order is $150 AUD. Add ${(MIN_SPEND - totalNum).toFixed(2)} more.
-                    </div>
-                  )}
 
                   {/* Gift note */}
                   <div className="mb-4">

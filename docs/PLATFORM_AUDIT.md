@@ -152,13 +152,19 @@ Each item uses the requested format. Status tags:
   give every form explicit loading/success/error states.
 - **Files:** `client/src/components/NotifyMeModal.tsx`, contact/newsletter, server.
 
-### 4.3 Free-shipping/threshold messaging inconsistent [TODO]
-- **Issue:** Free-shipping over $80 (chat KB) vs `subtotal >= 150` in
-  `checkout.createSession`; minimum order $150 vs $80 elsewhere. Conflicting rules.
-- **Recommended fix:** Centralise shipping/threshold rules server-side and surface
-  consistently (announcement bar, cart, product, checkout).
-- **Files:** `server/routers.ts` (checkout), cart/checkout UI, announcement bar.
-- **Risk if ignored:** Customer confusion, disputes.
+### 4.3 Free-shipping/threshold messaging inconsistent [DONE]
+- **Issue (was):** Conflicting rules — free over $80 (chat/banner) vs $150
+  (cart/checkout/session), plus a $150 **minimum** in the cart that BLOCKED
+  checkout of any single product (cheapest is $128). A real conversion bug.
+- **Implemented:** `shared/shipping.ts` is the single source of truth
+  (`FREE_SHIPPING_THRESHOLD=80`, `STANDARD_SHIPPING_COST=9.95`,
+  `MINIMUM_ORDER_VALUE=0`, `computeShipping()`). Wired into checkout session
+  (`server/routers.ts`), `CheckoutPage`, `CartPage` (minimum removed → checkout
+  no longer blocked; shows the real $9.95 cost), the `AnnouncementBar`, and the
+  chat knowledge base. Change a number once, it updates everywhere.
+- **Files:** `shared/shipping.ts`, `server/routers.ts`, `CheckoutPage.tsx`,
+  `CartPage.tsx`, `AnnouncementBar.tsx`.
+- **Note:** thresholds are a business choice — adjust them in one file.
 
 ---
 

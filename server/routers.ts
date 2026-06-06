@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
+import { computeShipping } from "@shared/shipping";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -156,8 +157,8 @@ MEDICAL AND SENSITIVE SITUATIONS:
 - Medical conditions: "These are cosmetic products and I can't advise on how they interact with medical conditions. Your GP or dermatologist would be the right person for that."
 
 SHIPPING AND ORDERS:
-- Free shipping on orders over $80 AUD. Standard 2 to 3 business days. Express available at checkout.
-- Minimum order value: $150 AUD.
+- Free shipping on orders over $80 AUD. Standard shipping is a flat $9.95 below that, 2 to 3 business days. Express available at checkout.
+- No minimum order value.
 - Dispatched within 1 business day for orders placed before 12pm AEST.
 - Australia only currently.
 - Returns: 30-day guarantee on unopened sealed products.
@@ -584,7 +585,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const stripe = getStripe();
         const subtotal = input.items.reduce((s, i) => s + i.priceAud * i.quantity, 0);
-        const shippingCost = subtotal >= 150 ? 0 : 9.95;
+        const shippingCost = computeShipping(subtotal);
         const orderNumber = `RC-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         const lineItems: any[] = (input.items as any[]).map((item: any) => ({
           price_data: {

@@ -14,7 +14,7 @@ export default function AnnouncementBar() {
       <div className="flex flex-col items-center justify-center gap-2 py-5">
         {/* Primary message */}
         <p className="text-xs font-medium tracking-[0.18em] uppercase text-center" style={{ color: "#EAEADF" }}>
-          Free Shipping on Orders Over $80 AUD &nbsp;·&nbsp; 1 Day Dispatch &nbsp;·&nbsp; Minimum $150 Spend
+          Free Shipping on Orders Over $80 AUD &nbsp;·&nbsp; 1 Day Dispatch &nbsp;·&nbsp; 30-Day Guarantee
         </p>
 
         {/* Secondary strip */}
