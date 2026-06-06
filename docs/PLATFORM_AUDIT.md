@@ -22,42 +22,35 @@ Each item uses the requested format. Status tags:
 
 ## Priority 1 — Critical blockers
 
-### 1.1 Orders are never created after payment [TODO]
-- **Issue:** There is no Stripe webhook handler. `server/_core/index.ts` mounts
-  tRPC and OAuth but no `/api/stripe/webhook` route, even though
-  `checkout.createSession` sets `success_url`/webhook metadata and `db.createOrder`
-  / `db.upsertCustomer` exist. Payments can succeed with **no order, customer,
-  stock decrement, or confirmation** being recorded.
-- **Why it matters:** The business cannot fulfil or even see paid orders. This is
-  a revenue-and-trust-critical data-loss bug.
-- **Recommended fix:** Add a raw-body `/api/stripe/webhook` Express route BEFORE
-  the JSON body parser, verify the signature with `STRIPE_WEBHOOK_SECRET`, and on
-  `checkout.session.completed` call `db.createOrder` + `db.upsertCustomer`,
-  decrement stock, trigger confirmation email, and recompute insights.
-- **Files:** `server/_core/index.ts`, `server/routers.ts` (checkout), `server/db.ts`.
-- **Risk if ignored:** Paid orders silently lost; no fulfilment; chargebacks.
+### 1.1 Orders are never created after payment [DONE]
+- **Issue (was):** There was no Stripe webhook handler. Payments could succeed
+  with no order, customer, stock decrement, or notification recorded.
+- **Implemented:** `server/stripeWebhook.ts` adds a raw-body
+  `/api/stripe/webhook` route (registered in `server/_core/index.ts` before the
+  JSON parser and excluded from the rate limiter). It verifies the signature with
+  `STRIPE_WEBHOOK_SECRET`, and on `checkout.session.completed` creates the order +
+  line items (`db.createOrder`), upserts the customer with lifetime totals
+  (`db.applyOrderToCustomer`), decrements stock, notifies the owner, and triggers
+  the analytics recompute. Idempotent via `db.getOrderByNumber`. Checkout now
+  stashes compact line items in session metadata so the order can be rebuilt.
+- **Files:** `server/stripeWebhook.ts`, `server/_core/index.ts`, `server/routers.ts`, `server/db.ts`.
+- **Remaining:** order-confirmation email (Priority 11); waitlist auto-notify when
+  restocked.
 
-### 1.2 Stripe client crashes at module load without a key [PARTIAL]
-- **Issue:** `server/routers.ts:14` runs `new Stripe(process.env.STRIPE_SECRET_KEY ?? "")`
-  at import time. Stripe v22 throws "Neither apiKey nor config provided" when the
-  key is empty, which crashes server boot and breaks the test suite
-  (`auth.logout.test.ts` fails for this reason, unrelated to the analytics work).
-- **Why it matters:** Any environment without the key (CI, local, tests) cannot
-  import the router at all.
-- **Recommended fix:** Lazily construct Stripe inside the procedures, or guard
-  with a clear startup error only when checkout is actually used.
-- **Files:** `server/routers.ts`.
-- **Risk if ignored:** Fragile boot; red CI; hard-to-debug failures.
+### 1.2 Stripe client crashes at module load without a key [DONE]
+- **Issue (was):** `new Stripe(...)` ran at import time and threw without a key,
+  crashing boot and the test suite (`auth.logout.test.ts`).
+- **Implemented:** `server/_core/stripe.ts` constructs Stripe lazily via
+  `getStripe()` (+ `isStripeConfigured()`); `routers.ts` and the webhook use it.
+  The full test suite is green again.
+- **Files:** `server/_core/stripe.ts`, `server/routers.ts`, `server/stripeWebhook.ts`.
 
-### 1.3 Stock is not decremented on sale [TODO]
-- **Issue:** `stockQty` only changes via admin `adjustStock`. Nothing reduces it
-  on purchase (compounded by 1.1).
-- **Why it matters:** Inventory, low-stock alerts, waitlist logic and demand
-  forecasts are all wrong without it.
-- **Recommended fix:** Decrement stock in the webhook order handler; flip
-  `available`/notify waitlist at zero.
-- **Files:** `server/db.ts`, webhook handler.
-- **Risk if ignored:** Overselling; inaccurate intelligence.
+### 1.3 Stock is not decremented on sale [DONE]
+- **Implemented:** `db.decrementStockBySlug` (floored at zero) is called per line
+  item in the webhook handler, so inventory, low-stock alerts and demand
+  forecasts now reflect real sales.
+- **Files:** `server/db.ts`, `server/stripeWebhook.ts`.
+- **Remaining:** auto-flip `available`/notify waitlist at zero stock.
 
 ---
 
@@ -302,7 +295,7 @@ Each item uses the requested format. Status tags:
 
 ## Suggested execution order (next sessions)
 
-1. **1.1–1.3** order webhook + stock decrement + lazy Stripe (unblocks commerce).
+1. ~~**1.1–1.3** order webhook + stock decrement + lazy Stripe~~ **[DONE]** — commerce unblocked.
 2. **2.1 + 7** first-party branded auth (customer + admin), de-Manus.
 3. **3.1** DB as product source of truth.
 4. **4.1–4.3 + 11** order emails, history, shipping rules, server email.

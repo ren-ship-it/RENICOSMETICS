@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import Stripe from "stripe";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -10,10 +9,7 @@ import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { analyticsRouter } from "./analytics/router";
 import { logAiDecision } from "./analytics/decisionLog";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2025-04-30.basil" as any,
-});
+import { getStripe } from "./_core/stripe";
 
 //  Chat Persona System
 
@@ -568,6 +564,7 @@ export const appRouter = router({
         origin: z.string(),
       }))
       .mutation(async ({ input }) => {
+        const stripe = getStripe();
         const subtotal = input.items.reduce((s, i) => s + i.priceAud * i.quantity, 0);
         const shippingCost = subtotal >= 150 ? 0 : 9.95;
         const orderNumber = `RC-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -606,6 +603,12 @@ export const appRouter = router({
             customer_name: input.customerName,
             shipping_address: JSON.stringify(input.shippingAddress),
             gift_note: input.giftNote ?? "",
+            // Compact line items so the webhook can rebuild the order + decrement
+            // stock. Kept short (s/n/p/q) to stay within Stripe's 500-char metadata
+            // limit (the catalogue is small, so this stays well under).
+            items: JSON.stringify(
+              input.items.map(i => ({ s: i.productSlug, n: i.name, p: i.priceAud, q: i.quantity })),
+            ),
           },
         });
         return { url: session.url, sessionId: session.id, orderNumber };

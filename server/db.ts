@@ -204,6 +204,73 @@ export async function getOrdersByCustomer(customerEmail: string) {
   return db.select().from(orders).where(eq(orders.customerEmail, customerEmail)).orderBy(desc(orders.createdAt));
 }
 
+/** Look up an order by its public order number (used for webhook idempotency). */
+export async function getOrderByNumber(orderNumber: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  return result[0];
+}
+
+/** Decrement stock for a product by slug, never below zero. */
+export async function decrementStockBySlug(slug: string, qty: number) {
+  const db = await getDb();
+  if (!db || qty <= 0) return;
+  await db
+    .update(products)
+    .set({ stockQty: sql`GREATEST(0, ${products.stockQty} - ${qty})`, updatedAt: new Date() })
+    .where(eq(products.slug, slug));
+}
+
+/**
+ * Upsert a customer from an order and bump their lifetime totals. Keyed by the
+ * unique email. Used by the Stripe webhook so the customer record and the
+ * repeat-purchase / segmentation signals stay accurate after every sale.
+ */
+export async function applyOrderToCustomer(data: {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  suburb?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  orderTotal: number;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .insert(customers)
+    .values({
+      email: data.email,
+      firstName: data.firstName ?? undefined,
+      lastName: data.lastName ?? undefined,
+      phone: data.phone ?? undefined,
+      address: data.address ?? undefined,
+      suburb: data.suburb ?? undefined,
+      state: data.state ?? undefined,
+      postcode: data.postcode ?? undefined,
+      totalOrders: 1,
+      totalSpent: String(data.orderTotal.toFixed(2)),
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        // Keep contact details fresh, and increment lifetime aggregates.
+        firstName: data.firstName ?? undefined,
+        lastName: data.lastName ?? undefined,
+        phone: data.phone ?? undefined,
+        address: data.address ?? undefined,
+        suburb: data.suburb ?? undefined,
+        state: data.state ?? undefined,
+        postcode: data.postcode ?? undefined,
+        totalOrders: sql`${customers.totalOrders} + 1`,
+        totalSpent: sql`${customers.totalSpent} + ${data.orderTotal}`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export async function getDashboardStats() {
   const db = await getDb();

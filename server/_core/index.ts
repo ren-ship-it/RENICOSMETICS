@@ -9,6 +9,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { registerStripeWebhook } from "../stripeWebhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,9 +50,14 @@ async function startServer() {
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many requests. Please try again shortly." },
-    skip: (req) => req.path.startsWith("/api/oauth"), // Don't rate-limit OAuth
+    // Don't rate-limit OAuth or the Stripe webhook (Stripe retries from its own IPs).
+    skip: (req) => req.path.startsWith("/api/oauth") || req.path === "/api/stripe/webhook",
   });
   app.use("/api", globalLimiter);
+
+  // Stripe webhook MUST be registered with a raw body parser BEFORE express.json
+  // so the signature can be verified against the unparsed payload.
+  registerStripeWebhook(app);
 
   // Stricter rate limiter for chat endpoint — 20 per 10 minutes per IP
   const chatLimiter = rateLimit({
