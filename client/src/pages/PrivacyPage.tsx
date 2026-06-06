@@ -4,6 +4,54 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
 import { useSEO } from "@/hooks/useSEO";
+import {
+  ANALYTICS_MODULES,
+  POLICY_VERSION,
+  automatedDecisionModules,
+} from "../../../shared/analytics/registry";
+
+// Privacy disclosures generated DIRECTLY from the analytics registry, so the
+// policy can never silently drift from what the platform actually collects.
+const COLLECTION_SECTION = {
+  title: "What We Collect and Why (Detailed)",
+  content:
+    "Below is the full, current list of data categories our platform may collect, the purpose, and how identifiable each one is. We collect only what serves a legitimate purpose and prefer pseudonymised or aggregated data wherever possible.\n\n" +
+    ANALYTICS_MODULES.map(
+      m =>
+        `${m.label} (${m.classification}, consent: ${m.consent}). ${m.publicSummary}`,
+    ).join("\n\n"),
+};
+
+const CLASSIFICATION_SECTION = {
+  title: "How We Classify Your Data",
+  content: `We separate data into three tiers and keep information in the least-identifying tier that still serves its purpose:
+
+Identified data is linked to you (for example your name, email and order history). We use it for things like fulfilling orders and support.
+
+Pseudonymised data is linked only to a random visitor identifier, not directly to your name. Most behavioural analytics sit here. We hash IP addresses rather than storing them, and we only record approximate location (country/state).
+
+Aggregated and anonymised insights are counts and rates with no individual rows (for example overall conversion rate or top searches). This is what powers most of our reporting and our internal AI assistant.`,
+};
+
+const AI_SECTION = {
+  title: "AI Assistant and Automated Decisions",
+  content: `Our website chat assistant is AI-generated. This is disclosed in the chat, and you can always reach a human at hello@renicosmetics.com.au.
+
+We also use automated analysis to support business decisions, including customer segmentation, churn-risk estimates, product recommendations and demand forecasting. These are listed as: ${automatedDecisionModules()
+    .map(m => m.label)
+    .join(", ")}.
+
+These automated outputs are advisory. They do not make legally or similarly significant decisions about you on their own, and they are reviewable by our team. You can ask us what automated insights we hold about you, ask for an explanation, or object, by contacting privacy@renicosmetics.com.au. Our internal AI business assistant operates on aggregated data and is available only to authorised staff.`,
+};
+
+const CONSENT_MANAGEMENT_SECTION = {
+  title: "Managing Your Consent",
+  content: `When you first visit, we ask for your consent to optional analytics, marketing and personalisation cookies. Essential cookies (needed for the cart and security) are always on.
+
+You can change your choices at any time using the "Cookie Preferences" link in the footer. We keep a record of your consent choices so we can honour them, and our systems check your consent before collecting optional data.
+
+Marketing communications are only sent if you opt in, and every message includes an unsubscribe option, in line with the Spam Act 2003 (Cth).`,
+};
 
 const SECTIONS = [
   {
@@ -102,6 +150,19 @@ Last updated: March 2026.`,
   },
 ];
 
+// Final ordered policy: static intro, generated collection detail, the rest of
+// the static legal sections, then AI/consent disclosures before the closing
+// "Changes" section.
+const ALL_SECTIONS = [
+  ...SECTIONS.slice(0, 2),
+  COLLECTION_SECTION,
+  CLASSIFICATION_SECTION,
+  ...SECTIONS.slice(2, -1),
+  AI_SECTION,
+  CONSENT_MANAGEMENT_SECTION,
+  SECTIONS[SECTIONS.length - 1],
+];
+
 export default function PrivacyPage() {
   useSEO({
     title: "Privacy Policy | Reni Cosmetics",
@@ -134,7 +195,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-sm leading-relaxed" style={{ color: "rgba(234,234,223,0.5)" }}>
-              Reni Cosmetics · Last updated March 2026 · Australian Privacy Act 1988 (Cth)
+              Reni Cosmetics · Last updated {POLICY_VERSION} · Australian Privacy Act 1988 (Cth)
             </p>
           </div>
         </div>
@@ -142,7 +203,7 @@ export default function PrivacyPage() {
         {/* Content */}
         <div className="container max-w-3xl py-20">
           <div className="space-y-12">
-            {SECTIONS.map((section, i) => (
+            {ALL_SECTIONS.map((section, i) => (
               <div key={i} className="border-t pt-10" style={{ borderColor: "rgba(45,44,44,0.1)" }}>
                 <div className="flex items-start gap-6">
                   <span

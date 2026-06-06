@@ -189,3 +189,142 @@ export const chatLogs = mysqlTable("chatLogs", {
 
 export type ChatLog = typeof chatLogs.$inferSelect;
 export type InsertChatLog = typeof chatLogs.$inferInsert;
+
+// ─── Analytics: Pseudonymised Event Store ───────────────────────────────────
+// Behavioural events keyed by a rotating, client-generated pseudonymous
+// visitorId. No raw IP is stored — only a salted hash (`ipHash`) and coarse geo.
+// `customerId` is populated ONLY when the event is part of an identified,
+// consented flow (e.g. a logged purchase); it is otherwise null.
+export const analyticsEvents = mysqlTable("analyticsEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  // Pseudonymous identifiers
+  visitorId: varchar("visitorId", { length: 64 }).notNull(),
+  sessionId: varchar("sessionId", { length: 64 }).notNull(),
+  // Classification of THIS event row (mirrors the module's tier)
+  classification: mysqlEnum("classification", [
+    "identified",
+    "pseudonymised",
+    "aggregated",
+  ]).default("pseudonymised").notNull(),
+  // Module + event taxonomy (validated server-side against the registry)
+  module: varchar("module", { length: 64 }).notNull(),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  // Common dimensions
+  path: varchar("path", { length: 512 }),
+  referrer: varchar("referrer", { length: 512 }),
+  productSlug: varchar("productSlug", { length: 128 }),
+  searchQuery: varchar("searchQuery", { length: 256 }),
+  value: decimal("value", { precision: 10, scale: 2 }),
+  quantity: int("quantity"),
+  durationMs: int("durationMs"),
+  // Device / coarse location (device_location module)
+  deviceType: varchar("deviceType", { length: 32 }),
+  browser: varchar("browser", { length: 64 }),
+  os: varchar("os", { length: 64 }),
+  country: varchar("country", { length: 64 }),
+  region: varchar("region", { length: 64 }),
+  ipHash: varchar("ipHash", { length: 64 }),
+  // Consent snapshot at time of collection (accountability — APP 1)
+  consentAnalytics: boolean("consentAnalytics").default(false).notNull(),
+  consentMarketing: boolean("consentMarketing").default(false).notNull(),
+  consentPersonalisation: boolean("consentPersonalisation").default(false).notNull(),
+  // Optional identified linkage (null unless consented + operationally needed)
+  customerId: int("customerId"),
+  // Arbitrary, non-sensitive structured detail
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+// ─── Consent Ledger ─────────────────────────────────────────────────────────
+// Append-only audit trail of consent choices. Every change writes a new row so
+// we can prove what was consented, against which policy version, and when.
+export const consentRecords = mysqlTable("consentRecords", {
+  id: int("id").autoincrement().primaryKey(),
+  visitorId: varchar("visitorId", { length: 64 }).notNull(),
+  customerId: int("customerId"),
+  analytics: boolean("analytics").default(false).notNull(),
+  marketing: boolean("marketing").default(false).notNull(),
+  personalisation: boolean("personalisation").default(false).notNull(),
+  // The policy/registry version the choice was made against
+  policyVersion: varchar("policyVersion", { length: 32 }).notNull(),
+  // How the choice was captured: banner_accept_all / banner_essential / banner_custom / preferences
+  source: varchar("source", { length: 48 }).default("banner").notNull(),
+  userAgent: varchar("userAgent", { length: 512 }),
+  ipHash: varchar("ipHash", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ConsentRecord = typeof consentRecords.$inferSelect;
+export type InsertConsentRecord = typeof consentRecords.$inferInsert;
+
+// ─── Analytics Module Configuration ─────────────────────────────────────────
+// Runtime on/off overrides for registry modules so collection can be tuned
+// without a redeploy. Absence of a row means "use the registry default".
+export const analyticsConfig = mysqlTable("analyticsConfig", {
+  id: int("id").autoincrement().primaryKey(),
+  moduleId: varchar("moduleId", { length: 64 }).notNull().unique(),
+  enabled: boolean("enabled").notNull(),
+  updatedBy: varchar("updatedBy", { length: 64 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AnalyticsConfig = typeof analyticsConfig.$inferSelect;
+
+// ─── Customer Insights (ML / derived) ───────────────────────────────────────
+// Per-customer derived scores: RFM segmentation, churn risk, LTV and predicted
+// reorder timing. This is IDENTIFIED, AUTOMATED DECISION-MAKING output — it is
+// retained with an explanation so it can be disclosed/contested (reform-ready).
+export const customerInsights = mysqlTable("customerInsights", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().unique(),
+  email: varchar("email", { length: 320 }),
+  // RFM
+  recencyDays: int("recencyDays"),
+  frequency: int("frequency"),
+  monetary: decimal("monetary", { precision: 10, scale: 2 }),
+  rScore: int("rScore"),
+  fScore: int("fScore"),
+  mScore: int("mScore"),
+  segment: varchar("segment", { length: 48 }),
+  // Predictive
+  churnScore: decimal("churnScore", { precision: 5, scale: 4 }),
+  churnRisk: mysqlEnum("churnRisk", ["low", "medium", "high"]),
+  ltv: decimal("ltv", { precision: 10, scale: 2 }),
+  predictedNextOrderDays: int("predictedNextOrderDays"),
+  // Explainability for ADM transparency
+  factors: json("factors"),
+  modelVersion: varchar("modelVersion", { length: 32 }),
+  computedAt: timestamp("computedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomerInsight = typeof customerInsights.$inferSelect;
+export type InsertCustomerInsight = typeof customerInsights.$inferInsert;
+
+// ─── AI / Automated Decision Log ────────────────────────────────────────────
+// Transparency ledger for AI-generated outputs and automated decisions
+// (Sidekick replies, churn scoring, recommendations). Prepares the platform for
+// the Privacy Act reform requirements on ADM disclosure & contestability.
+export const aiDecisionLog = mysqlTable("aiDecisionLog", {
+  id: int("id").autoincrement().primaryKey(),
+  // What kind of decision/output: "chat_reply" | "churn_score" | "recommendation" | "segmentation" | "forecast"
+  decisionType: varchar("decisionType", { length: 48 }).notNull(),
+  // Subject the decision is about, if any
+  subjectType: varchar("subjectType", { length: 32 }),
+  subjectId: varchar("subjectId", { length: 64 }),
+  modelId: varchar("modelId", { length: 64 }),
+  modelVersion: varchar("modelVersion", { length: 32 }),
+  // Whether the decision was disclosed to the affected person
+  disclosed: boolean("disclosed").default(true).notNull(),
+  // Whether a human is in the loop before the decision has an effect
+  humanReviewable: boolean("humanReviewable").default(true).notNull(),
+  inputsSummary: json("inputsSummary"),
+  output: json("output"),
+  explanation: text("explanation"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AiDecisionLog = typeof aiDecisionLog.$inferSelect;
+export type InsertAiDecisionLog = typeof aiDecisionLog.$inferInsert;

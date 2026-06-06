@@ -240,6 +240,15 @@ export default function Footer() {
                   Terms of Use
                 </Link>
                 <span style={{ color: "rgba(234,234,223,0.12)" }}>·</span>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("reni:open-consent"))}
+                  className="text-[10px] hover:opacity-70 transition-opacity"
+                  style={{ color: "rgba(234,234,223,0.2)" }}
+                >
+                  Cookie Preferences
+                </button>
+                <span style={{ color: "rgba(234,234,223,0.12)" }}>·</span>
                 <p className="text-[10px]" style={{ color: "rgba(234,234,223,0.18)" }}>
                   Topical/cosmetic use only. No TGA-registered claims.
                 </p>
