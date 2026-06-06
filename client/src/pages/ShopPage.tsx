@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { ShoppingBag, ArrowRight, MapPin } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts, type StorefrontProduct } from "@/hooks/useStorefrontProducts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -17,6 +17,7 @@ export default function ShopPage() {
   const [notifyProduct, setNotifyProduct] = useState<string | null>(null);
   const [addedId, setAddedId] = useState<string | null>(null);
   const { addItem, isInCart } = useCart();
+  const { products } = useStorefrontProducts();
 
   useSEO({
     title: "Shop Clinical Peptide Serums | Anti-Ageing Skincare Australia",
@@ -26,13 +27,13 @@ export default function ShopPage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const filtered = PRODUCTS.filter(p => {
+  const filtered = products.filter(p => {
     if (filter === "Phase 1 — Available Now") return p.phase === 1;
     if (filter === "Phase 2 — Coming Soon") return p.phase === 2;
     return true;
   });
 
-  const handleAddToCart = (e: React.MouseEvent, product: typeof PRODUCTS[0]) => {
+  const handleAddToCart = (e: React.MouseEvent, product: StorefrontProduct) => {
     e.preventDefault();
     e.stopPropagation();
     if (!product.available) {

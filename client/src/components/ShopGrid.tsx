@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { ArrowRight } from "lucide-react";
 
 // Sensory descriptors per product slug
@@ -23,6 +23,7 @@ export default function ShopGrid() {
   const headRef = useRef<HTMLDivElement>(null);
   const statementRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const { products } = useStorefrontProducts();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -33,7 +34,7 @@ export default function ShopGrid() {
     if (statementRef.current) observer.observe(statementRef.current);
     cardsRef.current.forEach(c => c && observer.observe(c));
     return () => observer.disconnect();
-  }, []);
+  }, [products.length]);
 
   return (
     <section id="shop" style={{ background: "#FAFAF7" }}>
@@ -80,7 +81,7 @@ export default function ShopGrid() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PRODUCTS.map((product, i) => (
+          {products.map((product, i) => (
             <div
               key={product.id}
               ref={el => { cardsRef.current[i] = el; }}

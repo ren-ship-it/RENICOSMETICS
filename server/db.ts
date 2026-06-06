@@ -96,6 +96,14 @@ export async function getProductBySlug(slug: string) {
   return result[0];
 }
 
+/** Public catalogue. Returns all products so the storefront can show sold-out
+ *  states; the client decides availability from `available` + `stockQty`. */
+export async function getPublicProducts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(products).orderBy(products.phase, products.id);
+}
+
 export async function getProductById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

@@ -107,17 +107,26 @@ Each item uses the requested format. Status tags:
 
 ## Priority 3 — Database & source-of-truth
 
-### 3.1 Hardcoded product data competes with the DB [TODO]
-- **Issue:** `client/src/data/products.ts` holds static product data used for
-  rendering, while a `products` DB table + admin CRUD also exist. Two sources of
-  truth.
-- **Why it matters:** Admin edits won't reliably reflect on the storefront;
-  price/stock/SEO can diverge.
-- **Recommended fix:** Make the DB the single source; have product pages/grids
-  read via tRPC (`products.bySlug`, a new `products.listPublic`), keep the static
-  file only as a seed/migration.
-- **Files:** `client/src/data/products.ts`, product pages/components, `server/routers.ts`.
-- **Risk if ignored:** Inconsistent storefront; cascading-update goals unmet.
+### 3.1 Hardcoded product data competes with the DB [DONE for commerce surfaces]
+- **Issue (was):** Static `products.ts` and the DB `products` table were two
+  sources of truth; admin edits didn't reach the storefront.
+- **Implemented:** The DB is now authoritative for mutable fields.
+  - `products.listPublic` (public) + `db.getPublicProducts()`.
+  - `useStorefrontProducts()` merges live DB rows over the static catalogue:
+    DB wins for price, availability, stock, images and copy; static provides
+    presentational defaults; if the DB is empty/unreachable the storefront falls
+    back to static (never breaks). Sold-out (stock 0) renders unavailable so the
+    notify/waitlist flow shows. Admin-created products also appear.
+  - Commerce-critical surfaces converted: home `ShopGrid`, `/shop` `ShopPage`,
+    and `ProductPage` (which also now tracks `view_item`/`add_to_cart`).
+  - `pnpm seed:products` seeds the DB from the static catalogue (preserves
+    admin-managed stock on re-run).
+- **Files:** `server/routers.ts`, `server/db.ts`,
+  `client/src/hooks/useStorefrontProducts.ts`, `ShopGrid.tsx`, `ShopPage.tsx`,
+  `ProductPage.tsx`, `scripts/seedProducts.ts`.
+- **Remaining:** migrate secondary/presentational surfaces still importing the
+  static list (BundlePage, SystemPage, QuizPage, CartPage display, ProtocolTeaser,
+  JournalArticlePage) to the hook for full consistency.
 
 ### 3.2 Other content not DB-backed [TODO]
 - **Issue:** Stockists, journal articles, reviews, layering guide are static/empty.

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { ShoppingBag, ChevronDown, ChevronUp, ArrowLeft, Star } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -11,11 +11,26 @@ import ImageSkeleton from "@/components/ImageSkeleton";
 import NotifyMeModal from "@/components/NotifyMeModal";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
-  const product = PRODUCTS.find(p => p.slug === slug);
+  const { products, bySlug } = useStorefrontProducts();
+  const product = bySlug.get(slug);
   const { addItem, isInCart } = useCart();
+  const { trackViewItem, trackAddToCart } = useAnalytics();
+
+  // Track product view (consent-gated downstream) once per product.
+  useEffect(() => {
+    if (product) {
+      trackViewItem({
+        itemId: product.slug,
+        itemName: product.name,
+        price: parseFloat(product.price.replace(/[^0-9.]/g, "")) || 0,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.slug]);
 
   const [expandInci, setExpandInci] = useState(true);
   const [expandHow, setExpandHow] = useState(true);
@@ -62,20 +77,22 @@ export default function ProductPage() {
   }
 
   const handleAddToCart = (qty = quantity) => {
+    const priceNum = parseFloat(product.price.replace(/[^0-9.]/g, "")) || 0;
     addItem({
       id: product.id,
       name: product.name,
       price: product.price,
-      priceNum: parseFloat(product.price.replace(/[^0-9.]/g, "")),
+      priceNum,
       image: product.image,
       size: product.size,
       slug: product.slug,
     });
+    trackAddToCart({ itemId: product.slug, itemName: product.name, price: priceNum, quantity: qty });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
 
-  const relatedProducts = PRODUCTS.filter(p => p.id !== product.id && p.available).slice(0, 3);
+  const relatedProducts = products.filter(p => p.id !== product.id && p.available).slice(0, 3);
   const heroActives = product.heroActives.filter(a => a.isHero);
   const supportingActives = product.heroActives.filter(a => !a.isHero);
 

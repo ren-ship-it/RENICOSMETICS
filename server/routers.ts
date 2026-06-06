@@ -245,6 +245,12 @@ export const appRouter = router({
         return db.getProductBySlug(input.slug);
       }),
 
+    // Public catalogue for the storefront (DB is the source of truth; the client
+    // merges these over the static presentational defaults).
+    listPublic: publicProcedure.query(async () => {
+      return db.getPublicProducts();
+    }),
+
     byId: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
