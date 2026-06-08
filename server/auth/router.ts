@@ -17,6 +17,8 @@ import { getSessionCookieOptions } from "../_core/cookies";
 import { ENV } from "../_core/env";
 import { deriveRequestContext } from "../analytics/pseudonymise";
 import { getOrdersByCustomer } from "../db";
+import { sendEmail, isEmailConfigured, appOrigin } from "../email";
+import { welcomeEmail, passwordResetEmail } from "../email/templates";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "./password";
 import {
   signCustomerSession,
@@ -116,6 +118,9 @@ export const customerAuthRouter = router({
       ctx.res.cookie(CUSTOMER_COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: CUSTOMER_SESSION_MAX_AGE_MS });
       await store.touchLogin(customer.id);
       await store.auditAuth({ actorType: "customer", actorId: String(customer.id), email: customer.email, event: "signup", success: true, ipHash: rc.ipHash, userAgent: rc.userAgent?.slice(0, 500) });
+      // Welcome email (best-effort, non-blocking).
+      const welcome = welcomeEmail(customer.firstName);
+      sendEmail({ to: customer.email, ...welcome }).catch(() => {});
       return publicCustomer(customer);
     }),
 
@@ -158,10 +163,13 @@ export const customerAuthRouter = router({
         const raw = randomBytes(32).toString("hex");
         await store.createResetToken(customer.id, sha256(raw), new Date(Date.now() + RESET_TOKEN_TTL_MS));
         await store.auditAuth({ actorType: "customer", actorId: String(customer.id), email: input.email, event: "password_reset_request", success: true, ipHash: rc.ipHash, userAgent: rc.userAgent?.slice(0, 500) });
-        // Email delivery is handled by the (pending) transactional email layer.
-        // Until then, expose the token only in non-production so the flow works.
-        if (!ENV.isProduction) devToken = raw;
-        else console.log(`[Auth] password reset requested for customer ${customer.id}`);
+        const proto = (ctx.req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0] || "https";
+        const resetUrl = `${appOrigin(ctx.req.headers.host, proto)}/reset-password?token=${raw}`;
+        const email = passwordResetEmail(resetUrl);
+        await sendEmail({ to: customer.email, ...email });
+        // If email isn't configured yet, expose the token in non-production so the
+        // flow remains testable end to end.
+        if (!isEmailConfigured() && !ENV.isProduction) devToken = raw;
       } else {
         await store.auditAuth({ actorType: "anonymous", email: input.email, event: "password_reset_request", success: false, ipHash: rc.ipHash, userAgent: rc.userAgent?.slice(0, 500), detail: "no account" });
       }

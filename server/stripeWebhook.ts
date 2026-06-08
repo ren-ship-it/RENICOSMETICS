@@ -14,8 +14,7 @@ import express from "express";
 import type Stripe from "stripe";
 import { getStripe } from "./_core/stripe";
 import * as db from "./db";
-import { notifyOwner } from "./_core/notification";
-import { recomputeCustomerInsights } from "./analytics/insights";
+import { emit } from "./events";
 import type { InsertOrderItem } from "../drizzle/schema";
 
 interface CheckoutItem {
@@ -127,14 +126,20 @@ async function handleCompletedCheckout(session: Stripe.Checkout.Session): Promis
     await db.decrementStockBySlug(it.slug, it.qty).catch(() => {});
   }
 
-  // ── Downstream cascade (non-blocking) ──────────────────────────────────
-  notifyOwner({
-    title: `New paid order ${orderNumber}`,
-    content: `From: ${meta.customer_name || email} (${email})\nTotal: $${total.toFixed(2)} ${(session.currency ?? "aud").toUpperCase()}\nItems: ${items.map(i => `${i.qty}× ${i.name}`).join(", ") || "n/a"}`,
-  }).catch(() => {});
-
-  // Recompute RFM/churn so the intelligence layer reflects the new order.
-  recomputeCustomerInsights().catch(() => {});
+  // ── Downstream cascade ──────────────────────────────────────────────────
+  // Emit one domain event; handlers (owner notification, confirmation email,
+  // analytics recompute) react independently. See server/events/index.ts.
+  const currency = (session.currency ?? "aud").toUpperCase();
+  emit("order.paid", {
+    orderNumber,
+    email,
+    customerName: firstName,
+    items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+    subtotal,
+    shippingCost,
+    total,
+    currency,
+  });
 }
 
 export function registerStripeWebhook(app: Express): void {

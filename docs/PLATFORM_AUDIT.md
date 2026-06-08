@@ -168,19 +168,18 @@ Each item uses the requested format. Status tags:
 
 ---
 
-## Priority 5 — Cascading & reactive behaviour [PARTIAL]
-- **Issue:** Few changes propagate automatically: no webhook → no downstream
-  cascade; stock changes don't refresh availability/waitlist/AI context; product
-  edits don't refresh SEO/schema.
-- **Why it matters:** The brief wants an interconnected SaaS, not isolated CRUD.
-- **Recommended fix:** Introduce a lightweight domain-event bus (e.g.
-  `order.paid`, `stock.changed`, `product.updated`) with handlers that decrement
-  stock, notify waitlist, recompute `customerInsights` (hook already exists:
-  `recomputeCustomerInsights`), emit alerts (`deriveAlerts`), and invalidate
-  caches/queries. The analytics layer already refreshes via TanStack Query
-  invalidation and reads live snapshots on demand.
-- **Files:** new `server/events/*`, webhook, `server/analytics/insights.ts`.
-- **Status:** Analytics/insights/alerts recompute is built; event wiring is TODO.
+## Priority 5 — Cascading & reactive behaviour [PARTIAL→mostly DONE]
+- **Implemented:** A typed in-process domain-event bus (`server/events/bus.ts`)
+  with handlers registered at startup (`server/events/index.ts`). The Stripe
+  webhook now emits `order.paid`, and isolated handlers cascade to: owner
+  notification, customer confirmation email, and a `customerInsights` recompute
+  (segmentation/churn). New downstream effects are added in one place without
+  touching the emitter. Storefront already reflects admin product edits live
+  (P3), and the admin UI auto-refreshes via TanStack Query invalidation.
+- **Files:** `server/events/*`, `server/stripeWebhook.ts`, `server/_core/index.ts`.
+- **Remaining:** emit `stock.changed` (→ waitlist notify when restocked, low-stock
+  alert) and `product.updated` (→ cache/SEO refresh); these are easy additions on
+  the bus now that it exists.
 
 ---
 
@@ -275,14 +274,20 @@ Each item uses the requested format. Status tags:
 
 ---
 
-## Priority 11 — Email & notifications [TODO]
-- **Issue:** Transactional email is client-side EmailJS with unset keys; no
-  server-side branded emails for order confirmation, password reset, admin alerts.
-- **Recommended fix:** Server-side email (SES via existing AWS creds, or a
-  provider) with branded templates; trigger from the webhook and auth flows; keep
-  the owner-notification path (`notifyOwner`) for admin alerts.
-- **Files:** new `server/email/*`, webhook, auth, forms.
-- **Risk if ignored:** Customers get no confirmations; password reset impossible.
+## Priority 11 — Email & notifications [DONE (pending provider key)]
+- **Implemented:** A dependency-free server-side email layer (`server/email/*`)
+  with branded HTML templates (welcome, password reset, order confirmation) in
+  the Reni palette and no third-party branding. Transport uses the Resend HTTP
+  API when `RESEND_API_KEY` is set, and logs to the console otherwise so flows
+  are testable now. Wired to: customer signup (welcome), password reset (real
+  email; dev token only exposed when email is unconfigured in non-prod), and the
+  `order.paid` event (confirmation). Owner alerts still use `notifyOwner`.
+- **Go live:** set `RESEND_API_KEY` (and optionally `EMAIL_FROM`, `APP_URL`).
+  Swapping to SES only changes `server/email/index.ts:deliver()`.
+- **Files:** `server/email/index.ts`, `server/email/templates.ts`,
+  `server/auth/router.ts`, `server/events/index.ts`.
+- **Remaining:** migrate the client-side EmailJS contact/newsletter forms to the
+  server email layer (removes exposed template ids); shipment-tracking email.
 
 ---
 
