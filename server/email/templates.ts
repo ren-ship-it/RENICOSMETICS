@@ -81,6 +81,44 @@ ${p("You asked us to let you know. Stock on our clinical serums can move quickly
   };
 }
 
+export interface DigestAlert { severity: string; title: string; recommendedAction: string }
+
+export function digestEmail(args: {
+  subject: string;
+  periodLabel: string;
+  metrics: Array<{ label: string; value: string }>;
+  alerts: DigestAlert[];
+}): EmailContent {
+  const metricRows = args.metrics
+    .map(m => `<tr><td style="padding:6px 0;font-size:13px;color:${MUTED};">${m.label}</td><td style="padding:6px 0;font-size:13px;text-align:right;color:${OBSIDIAN};font-weight:600;">${m.value}</td></tr>`)
+    .join("");
+  const alertItems = args.alerts.length
+    ? args.alerts
+        .map(
+          a =>
+            `<div style="border-left:3px solid ${a.severity === "critical" ? "#b3261e" : a.severity === "high" ? "#b58900" : "#6B7A3E"};padding:8px 12px;margin:0 0 8px;background:#f5f5f0;">
+              <div style="font-size:12px;font-weight:700;color:${OBSIDIAN};">${a.title} <span style="font-weight:400;color:${MUTED};">(${a.severity})</span></div>
+              <div style="font-size:12px;color:${MUTED};">${a.recommendedAction}</div>
+            </div>`,
+        )
+        .join("")
+    : `${p("No alerts — nothing needs attention.")}`;
+
+  const body = `${p(`Here is your ${args.periodLabel} business summary.`)}
+<table style="width:100%;border-collapse:collapse;margin-bottom:18px;">${metricRows}</table>
+<p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:${MUTED};margin:0 0 8px;">Alerts</p>
+${alertItems}
+<div style="text-align:center;margin:22px 0;">${button("https://renicosmetics.com.au/admin/intelligence", "Open Intelligence")}</div>`;
+
+  const text =
+    `${args.periodLabel} summary\n` +
+    args.metrics.map(m => `${m.label}: ${m.value}`).join("\n") +
+    `\n\nAlerts:\n` +
+    (args.alerts.length ? args.alerts.map(a => `- [${a.severity}] ${a.title} — ${a.recommendedAction}`).join("\n") : "None");
+
+  return { subject: args.subject, html: shell("Business Digest", body), text };
+}
+
 export function refundEmail(o: { orderNumber: string; customerName?: string; amount?: number; currency?: string }): EmailContent {
   const amt = o.amount !== undefined ? `$${o.amount.toFixed(2)}${o.currency ? ` ${o.currency}` : ""}` : "your payment";
   const body = `${p(`Hi${o.customerName ? ` ${o.customerName}` : ""}, we've processed a refund of ${amt} for order ${o.orderNumber}.`)}

@@ -45,6 +45,7 @@ export default function AdminIntelligence() {
   const recompute = trpc.analytics.recomputeInsights.useMutation({
     onSuccess: () => { snapshot.refetch(); },
   });
+  const sendDigest = trpc.analytics.sendDigest.useMutation();
 
   // ── Ask AI ────────────────────────────────────────────────────────────
   const ask = trpc.analytics.ask.useMutation();
@@ -93,14 +94,25 @@ export default function AdminIntelligence() {
               Private business analyst. Answers are grounded in live data, last {windowDays} days. The AI does not invent figures.
             </p>
           </div>
-          <button
-            onClick={() => recompute.mutate()}
-            disabled={recompute.isPending}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={recompute.isPending ? "animate-spin" : ""} />
-            {recompute.isPending ? "Recomputing..." : "Recompute ML insights"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => sendDigest.mutate({ windowDays }, {
+                onSuccess: r => alert(r.emailed ? "Digest sent (owner notification + email)." : "Digest sent to owner notifications. Set OWNER_EMAIL to also email it."),
+              })}
+              disabled={sendDigest.isPending}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <Send size={13} /> {sendDigest.isPending ? "Sending..." : "Email digest"}
+            </button>
+            <button
+              onClick={() => recompute.mutate()}
+              disabled={recompute.isPending}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={recompute.isPending ? "animate-spin" : ""} />
+              {recompute.isPending ? "Recomputing..." : "Recompute ML insights"}
+            </button>
+          </div>
         </div>
 
         {/* Ask AI */}

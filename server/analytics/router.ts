@@ -12,6 +12,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, adminProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
+import { ENV } from "../_core/env";
+import { notifyOwner } from "../_core/notification";
+import { sendEmail } from "../email";
+import { digestEmail } from "../email/templates";
 import {
   ANALYTICS_MODULES,
   CONSENT_CATEGORIES,
@@ -252,6 +256,47 @@ export const analyticsRouter = router({
   recomputeInsights: adminProcedure.mutation(async () => {
     return recomputeCustomerInsights();
   }),
+
+  // ── Admin: send a business digest (alerts + key metrics) to the owner ────
+  // Manual trigger here; also call on a schedule (cron) for weekly delivery.
+  sendDigest: adminProcedure
+    .input(z.object({ windowDays: z.number().int().min(1).max(90).default(7) }).optional())
+    .mutation(async ({ input }) => {
+      const windowDays = input?.windowDays ?? 7;
+      const snapshot = await buildSnapshot(windowDays);
+      const alerts = deriveAlerts(snapshot);
+      const periodLabel = `last ${windowDays} days`;
+      const metrics = [
+        { label: "Revenue (paid, all-time)", value: `$${Number(snapshot.commerce.totalRevenue).toLocaleString()}` },
+        { label: "Orders", value: String(snapshot.commerce.totalOrders) },
+        { label: "Customers", value: String(snapshot.commerce.totalCustomers) },
+        { label: "Cart abandonment", value: `${snapshot.cart.abandonmentRate}%` },
+        { label: "Sessions", value: String(snapshot.sessions.sessions) },
+        { label: "Low-stock items", value: String(snapshot.commerce.lowStockCount) },
+        { label: "High churn-risk customers", value: String(snapshot.churn.distribution.high) },
+      ];
+
+      // Always notify the project owner via the platform notification service.
+      const text =
+        `Reni business digest (${periodLabel})\n` +
+        metrics.map(m => `${m.label}: ${m.value}`).join("\n") +
+        `\n\nAlerts (${alerts.length}):\n` +
+        (alerts.length ? alerts.map(a => `- [${a.severity}] ${a.title}: ${a.recommendedAction}`).join("\n") : "None");
+      await notifyOwner({ title: `Reni digest — ${periodLabel}`, content: text }).catch(() => {});
+
+      // Email the digest if an owner email is configured.
+      if (ENV.ownerEmail) {
+        const email = digestEmail({
+          subject: `Reni Cosmetics — business digest (${periodLabel})`,
+          periodLabel,
+          metrics,
+          alerts: alerts.map(a => ({ severity: a.severity, title: a.title, recommendedAction: a.recommendedAction })),
+        });
+        await sendEmail({ to: ENV.ownerEmail, ...email }).catch(() => {});
+      }
+
+      return { ok: true, alertCount: alerts.length, emailed: !!ENV.ownerEmail };
+    }),
 
   // ── Admin: AI business assistant (Ask mode) ─────────────────────────────
   ask: adminProcedure

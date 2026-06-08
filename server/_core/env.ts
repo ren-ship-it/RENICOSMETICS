@@ -13,4 +13,5 @@ export const ENV = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   emailFrom: process.env.EMAIL_FROM ?? "Reni Cosmetics <hello@renicosmetics.com.au>",
   appUrl: process.env.APP_URL ?? "",
+  ownerEmail: process.env.OWNER_EMAIL ?? "",
 };
