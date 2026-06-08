@@ -13,7 +13,8 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "gen:register": "tsx scripts/genDataRegister.ts",
     "admin:create": "tsx scripts/createAdmin.ts",
-    "seed:products": "tsx scripts/seedProducts.ts"
+    "seed:products": "tsx scripts/seedProducts.ts",
+    "seed:content": "tsx scripts/seedContent.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

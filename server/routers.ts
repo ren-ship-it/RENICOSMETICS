@@ -14,6 +14,7 @@ import { getStripe } from "./_core/stripe";
 import { emit } from "./events";
 import { customerAuthRouter } from "./auth/router";
 import { adminAuthRouter } from "./auth/adminRouter";
+import { contentRouter } from "./content/router";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
 //  Chat Persona System
@@ -196,6 +197,9 @@ export const appRouter = router({
 
   // First-party admin login (brand-owned, parallel to Manus OAuth).
   adminAuth: adminAuthRouter,
+
+  // Admin-managed content: Journal posts and Stockists.
+  content: contentRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

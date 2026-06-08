@@ -371,3 +371,42 @@ export const aiDecisionLog = mysqlTable("aiDecisionLog", {
 
 export type AiDecisionLog = typeof aiDecisionLog.$inferSelect;
 export type InsertAiDecisionLog = typeof aiDecisionLog.$inferInsert;
+
+// ─── Journal / Blog (admin-managed content) ─────────────────────────────────
+export const journalPosts = mysqlTable("journalPosts", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 160 }).notNull().unique(),
+  title: varchar("title", { length: 256 }).notNull(),
+  category: varchar("category", { length: 64 }),
+  excerpt: text("excerpt"),
+  content: text("content"), // paragraphs separated by blank lines
+  image: text("image"),
+  author: varchar("author", { length: 128 }),
+  readTime: varchar("readTime", { length: 32 }),
+  relatedProductSlugs: json("relatedProductSlugs"),
+  status: mysqlEnum("status", ["draft", "published", "archived"]).default("published").notNull(),
+  publishedAt: timestamp("publishedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type JournalPost = typeof journalPosts.$inferSelect;
+export type InsertJournalPost = typeof journalPosts.$inferInsert;
+
+// ─── Stockists (admin-managed) ──────────────────────────────────────────────
+export const stockists = mysqlTable("stockists", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  type: varchar("type", { length: 128 }),
+  region: varchar("region", { length: 128 }),
+  location: varchar("location", { length: 256 }),
+  url: text("url"),
+  online: boolean("online").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Stockist = typeof stockists.$inferSelect;
+export type InsertStockist = typeof stockists.$inferInsert;

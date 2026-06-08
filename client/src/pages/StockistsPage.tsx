@@ -5,27 +5,12 @@ import PageErrorBoundary from "@/components/PageErrorBoundary";
 import { useSEO } from "@/hooks/useSEO";
 import { MapPin, Globe, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
-
-const STOCKISTS = [
-  {
-    region: "Victoria",
-    stores: [
-      { name: "The Skin Science Company", type: "Online / Wholesale", location: "Epping, VIC", url: "https://theskinsciencecompany.com.au", online: true },
-      { name: "Reni Cosmetics Direct", type: "Online Flagship", location: "renicosmetics.com.au", url: "https://renicosmetics.com.au", online: true },
-    ],
-  },
-];
-
-const COMING_SOON_REGIONS = [
-  { region: "New South Wales", eta: "Q2 2026" },
-  { region: "Queensland", eta: "Q2 2026" },
-  { region: "South Australia", eta: "Q3 2026" },
-  { region: "Western Australia", eta: "Q3 2026" },
-  { region: "New Zealand", eta: "Q4 2026" },
-  { region: "United Kingdom", eta: "Q4 2026" },
-];
+import { trpc } from "@/lib/trpc";
+import { STOCKISTS as STATIC_STOCKISTS, COMING_SOON_REGIONS, groupStockists } from "@/data/stockists";
 
 export default function StockistsPage() {
+  const dbStockists = trpc.content.stockistsList.useQuery();
+  const STOCKISTS = dbStockists.data && dbStockists.data.length ? groupStockists(dbStockists.data) : STATIC_STOCKISTS;
   useSEO({
     title: "Stockists — Reni Cosmetics",
     description: "Find Reni Cosmetics at authorised stockists across Australia. Wholesale and retail enquiries welcome.",
