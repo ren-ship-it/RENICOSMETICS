@@ -3,7 +3,8 @@ import { ArrowRight, Instagram, Facebook } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 
-const LOGO_DARK = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/hMvCPNXLdbYPQXii.png";
+import { ASSETS } from "@/data/assets";
+const LOGO_DARK = ASSETS.logoDark;
 
 export default function Footer() {
   const [email, setEmail] = useState("");

@@ -11,6 +11,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerStripeWebhook } from "../stripeWebhook";
 import { registerEventHandlers } from "../events";
+import { getPublicProducts as dbGetPublicProducts } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,9 +39,26 @@ async function startServer() {
   // Wire domain-event handlers (order.paid → notify + email + analytics, etc.).
   registerEventHandlers();
 
-  // Security headers via Helmet — protects against common web vulnerabilities
+  // Security headers via Helmet. CSP runs in REPORT-ONLY mode so it cannot break
+  // the site; it surfaces violations to tune from. Flip `reportOnly` to false
+  // once the report log is clean for your exact deployment domains.
   app.use(helmet({
-    contentSecurityPolicy: false, // Managed by Vite/CDN layer in production
+    contentSecurityPolicy: {
+      useDefaults: true,
+      reportOnly: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://www.googletagmanager.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "https://api.stripe.com", "https://www.google-analytics.com", "https://api.resend.com"],
+        frameSrc: ["https://js.stripe.com", "https://hooks.stripe.com"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }));
 
@@ -99,6 +117,30 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Dynamic sitemap generated from live products (takes precedence over the
+  // static file). Keeps search engines in sync with the catalogue.
+  app.get("/sitemap.xml", async (_req, res) => {
+    const base = "https://renicosmetics.com.au";
+    const staticPaths = [
+      "/", "/shop", "/system", "/science", "/journal", "/bundle", "/quiz",
+      "/about", "/help", "/shipping", "/faq", "/contact", "/stockists",
+      "/layering-guide", "/privacy", "/terms", "/terms-of-use",
+    ];
+    let productPaths: string[] = [];
+    try {
+      const products = await dbGetPublicProducts();
+      productPaths = products.map(p => `/products/${p.slug}`);
+    } catch {
+      /* fall back to static paths only */
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const urls = [...staticPaths, ...productPaths]
+      .map(p => `  <url><loc>${base}${p}</loc><lastmod>${today}</lastmod></url>`)
+      .join("\n");
+    res.header("Content-Type", "application/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
+  });
 
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {

@@ -11,7 +11,7 @@ const STOCKISTS = [
     region: "Victoria",
     stores: [
       { name: "The Skin Science Company", type: "Online / Wholesale", location: "Epping, VIC", url: "https://theskinsciencecompany.com.au", online: true },
-      { name: "Reni Cosmetics Direct", type: "Online Flagship", location: "renicosmetics-fiwabj6o.manus.space", url: "https://renicosmetics-fiwabj6o.manus.space", online: true },
+      { name: "Reni Cosmetics Direct", type: "Online Flagship", location: "renicosmetics.com.au", url: "https://renicosmetics.com.au", online: true },
     ],
   },
 ];

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-const SCIENCE_BG = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/EJPqtjCtpnJzniFD.jpg";
+import { ASSETS } from "@/data/assets";
+const SCIENCE_BG = ASSETS.scienceBg;
 
 const pathways = [
   {

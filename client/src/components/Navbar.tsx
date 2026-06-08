@@ -4,8 +4,9 @@ import { ShoppingBag, Menu, X, ChevronDown, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 // Cream/white logo — always used (navbar is always dark-bg or white-bg)
-const LOGO_CREAM = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/lDbbnIPJPEqHzmnS.png";
-const LOGO_DARK = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/hMvCPNXLdbYPQXii.png";
+import { ASSETS } from "@/data/assets";
+const LOGO_CREAM = ASSETS.logoCream;
+const LOGO_DARK = ASSETS.logoDark;
 
 // Shop dropdown items — The Bundle is now a subcategory of Shop
 const SHOP_ITEMS = [

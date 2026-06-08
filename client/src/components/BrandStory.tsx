@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 
-const TEXTURE_BG = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/SyHuyeCsFeEPTkhN.jpg";
-const WHITE_ICON = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/BLChaTVelCndBUOt.png";
+import { ASSETS } from "@/data/assets";
+const TEXTURE_BG = ASSETS.brandStoryTexture;
+const WHITE_ICON = ASSETS.brandStoryWhiteIcon;
 
 export default function BrandStory() {
   const ref = useRef<HTMLDivElement>(null);

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { ShoppingBag, Star, ChevronDown, ChevronUp } from "lucide-react";
 
-const PRODUCT_IMG = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/QZiaKdBnbNxrVjaF.jpg";
-const LABEL_DARK = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/qCooMEEiTbFjrbIa.png";
-const LABEL_LIGHT = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/jJbLuiBwvuSLIXug.png";
+import { ASSETS } from "@/data/assets";
+const PRODUCT_IMG = ASSETS.featuredProduct;
+const LABEL_DARK = ASSETS.featuredLabelDark;
+const LABEL_LIGHT = ASSETS.featuredLabelLight;
 
 const activeIngredients = [
   { name: "Niacinamide", pct: "10%", benefit: "Improves skin tone, reduces pores, strengthens barrier" },

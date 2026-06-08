@@ -71,7 +71,7 @@ export default function AdminLogin() {
 
         <div className="text-center mt-5">
           <a href={getLoginUrl()} className="text-[11px] text-gray-500 hover:text-gray-300 underline">
-            Sign in with Manus OAuth
+            Single sign-on (SSO)
           </a>
         </div>
       </div>

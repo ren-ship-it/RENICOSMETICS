@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ASSETS } from "@/data/assets";
 
 interface ProductSchema {
   type: "product";
@@ -47,7 +48,7 @@ interface SEOProps {
 }
 
 const BRAND = "Reni Cosmetics";
-const DEFAULT_IMAGE = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/qiRyrUiSwYwLhIls.jpg";
+const DEFAULT_IMAGE = ASSETS.seoDefault;
 const BASE_URL = "https://renicosmetics.com.au";
 
 function setMeta(name: string, content: string, property = false) {
@@ -132,7 +133,7 @@ function buildStructuredData(sd: StructuredData): object {
         name: BRAND,
         logo: {
           "@type": "ImageObject",
-          url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/hMvCPNXLdbYPQXii.png",
+          url: ASSETS.logoDark,
         },
       },
     };
@@ -205,7 +206,7 @@ export function useSEO({ title, description, image, url, type = "website", struc
       "@type": "Organization",
       name: BRAND,
       url: BASE_URL,
-      logo: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/hMvCPNXLdbYPQXii.png",
+      logo: ASSETS.logoDark,
       contactPoint: {
         "@type": "ContactPoint",
         email: "hello@renicosmetics.com.au",

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-const PRODUCT_IMG = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/mGILbKUCGqEqLspJ.jpg";
+import { ASSETS } from "@/data/assets";
+const PRODUCT_IMG = ASSETS.brandStoryProduct;
 
 export default function BrandStorySection() {
   const leftRef = useRef<HTMLDivElement>(null);
