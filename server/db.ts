@@ -274,6 +274,7 @@ export async function applyOrderToCustomer(data: {
   state?: string | null;
   postcode?: string | null;
   orderTotal: number;
+  acceptsMarketing?: boolean;
 }) {
   const db = await getDb();
   if (!db) return;
@@ -288,6 +289,7 @@ export async function applyOrderToCustomer(data: {
       suburb: data.suburb ?? undefined,
       state: data.state ?? undefined,
       postcode: data.postcode ?? undefined,
+      acceptsMarketing: data.acceptsMarketing ?? false,
       totalOrders: 1,
       totalSpent: String(data.orderTotal.toFixed(2)),
     })
@@ -301,6 +303,9 @@ export async function applyOrderToCustomer(data: {
         suburb: data.suburb ?? undefined,
         state: data.state ?? undefined,
         postcode: data.postcode ?? undefined,
+        // Opt-in is sticky: a new opt-in grants consent, but NOT opting in on a
+        // later order never silently revokes existing consent.
+        ...(data.acceptsMarketing ? { acceptsMarketing: true } : {}),
         totalOrders: sql`${customers.totalOrders} + 1`,
         totalSpent: sql`${customers.totalSpent} + ${data.orderTotal}`,
         updatedAt: new Date(),

@@ -118,6 +118,7 @@ async function handleCompletedCheckout(session: Stripe.Checkout.Session): Promis
       state: shipping.state,
       postcode: shipping.postcode,
       orderTotal: total,
+      acceptsMarketing: meta.accepts_marketing === "1",
     })
     .catch(e => console.warn("[Stripe webhook] applyOrderToCustomer failed:", e));
 

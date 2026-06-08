@@ -110,6 +110,7 @@ export default function CheckoutPage() {
         phone: form.phone || undefined,
       },
       giftNote: form.giftNote || undefined,
+      acceptsMarketing: form.newsletter,
       origin: window.location.origin,
     });
   };

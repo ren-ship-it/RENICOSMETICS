@@ -594,6 +594,7 @@ export const appRouter = router({
           phone: z.string().optional(),
         }),
         giftNote: z.string().optional(),
+        acceptsMarketing: z.boolean().default(false),
         origin: z.string(),
       }))
       .mutation(async ({ input }) => {
@@ -636,6 +637,7 @@ export const appRouter = router({
             customer_name: input.customerName,
             shipping_address: JSON.stringify(input.shippingAddress),
             gift_note: input.giftNote ?? "",
+            accepts_marketing: input.acceptsMarketing ? "1" : "0",
             // Compact line items so the webhook can rebuild the order + decrement
             // stock. Kept short (s/n/p/q) to stay within Stripe's 500-char metadata
             // limit (the catalogue is small, so this stays well under).
