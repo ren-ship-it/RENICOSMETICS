@@ -28,16 +28,16 @@ stock=0 = sold-out), **MFA (TOTP) for admins**, and an **admin media library**
 (image uploads to object storage). New tables: `reviews`, `mediaAssets`; new user
 columns `mfaSecret`/`mfaEnabled` — apply with `pnpm db:push`.
 
-Deliberately NOT built (decisions, not oversights):
+Also built: **abandoned-cart recovery** (consent-gated capture at checkout +
+admin/cron reminder emails to opted-in shoppers only; recovered on order) and the
+**AI edit-approval queue** (the AI drafts a strictly-validated `product_update` or
+`journal_upsert` proposal; nothing applies until an admin approves). New tables:
+`abandonedCarts`, `aiProposals`.
+
+Deliberately NOT built (decision, not oversight):
 - **Product variants** — the brand is intentionally single-SKU (one fixed size
   per product); a variant system would be speculative over-engineering. Revisit
   only if multi-size SKUs are introduced.
-- **Abandoned-cart *customer* emails** — emailing non-purchasers needs cart-time
-  email capture + marketing consent; owner-facing alerts/digest were built
-  instead. This is a consent/marketing decision to make before building.
-- **AI-edit approval queue** — the admin AI is advisory-only, so there are no
-  AI-authored edits to approve yet; the propose-only design + `aiDecisionLog`
-  are the foundation for it.
 
 ## Status summary (live)
 

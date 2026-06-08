@@ -86,3 +86,5 @@ cookie banner → consent → analytics flow.
 - `pnpm purge:retention` — daily (data-retention compliance).
 - `analytics.sendDigest` (tRPC, admin) — weekly, for the business digest email.
   Trigger via an authenticated scheduled call, or the "Email digest" button.
+- `cart.sendReminders` (tRPC, admin) — hourly/daily, abandoned-cart recovery
+  emails (consent-gated). Trigger via cron or the "Cart reminders" button.
