@@ -10,7 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: Array<{ label: string; href: string; icon: any; devOnly?: boolean }> = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard },
   { label: "Products", href: "/admin/products", icon: Package },
   { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
@@ -20,8 +20,12 @@ const NAV_ITEMS = [
   { label: "Messages", href: "/admin/messages", icon: MessageSquare },
   { label: "Subscribers", href: "/admin/subscribers", icon: Mail },
   { label: "Chat Logs", href: "/admin/chat-logs", icon: MessageSquare },
-  { label: "Stress Test", href: "/admin/stress-test", icon: AlertTriangle },
+  // Internal load-testing tool — hidden from the nav in production so it can't be
+  // triggered accidentally (the route itself remains admin-gated).
+  { label: "Stress Test", href: "/admin/stress-test", icon: AlertTriangle, devOnly: true },
 ];
+
+const VISIBLE_NAV = NAV_ITEMS.filter(item => !item.devOnly || !import.meta.env.PROD);
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -95,7 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(item => {
+        {VISIBLE_NAV.map(item => {
           const Icon = item.icon;
           const active = location === item.href || (item.href !== "/admin" && location.startsWith(item.href));
           return (

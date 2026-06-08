@@ -303,13 +303,11 @@ Each item uses the requested format. Status tags:
 
 ## Priority 13 — Performance, polish & QA
 
-### 13.1 Fixed-position element overlap on mobile [TODO]
-- **Issue:** The cookie banner (fixed, full-width bottom) and the chat widget
-  (floating bottom-right) can overlap on small screens; both compete with the
-  sticky cart bar.
-- **Recommended fix:** Coordinate z-index and offsets; hide/relayout the chat
-  bubble while the banner is open; ensure tap targets ≥ 44px.
-- **Files:** `CookieConsent.tsx`, `ChatWidget.tsx`, `StickyCartBar.tsx`.
+### 13.1 Fixed-position element overlap on mobile [DONE]
+- **Implemented:** The chat launcher is hidden until the cookie/consent banner is
+  resolved (it listens for the `reni:consent` event), so the two bottom-corner
+  fixed elements never overlap. Consent-first is also better UX.
+- **Files:** `ChatWidget.tsx` (consent-gated launcher).
 
 ### 13.2 Placeholder / unfinished content [TODO]
 - **Issue:** Empty stockists, empty journal, placeholder referral page, static
@@ -325,9 +323,21 @@ Each item uses the requested format. Status tags:
 - **Issue:** Needs a heading-hierarchy, contrast, focus-visible, alt-text and
   keyboard-nav sweep across pages.
 
-### 13.5 Admin "Stress Test" tool in production [TODO]
-- **Issue:** `/admin/stress-test` could be triggered in prod.
-- **Recommended fix:** Gate behind an env flag / non-production guard.
+### 13.5 Admin "Stress Test" tool in production [DONE]
+- **Implemented:** The Stress Test nav item is hidden in production builds
+  (`import.meta.env.PROD`); the route stays admin-gated. `AdminLayout.tsx`.
+
+### 13.2 Placeholder content [NOTE — owner content task]
+- Stockists/journal/referral pages exist with real layouts; the gap is *content*
+  (no articles/stockists written), not code. These need owner-provided content or
+  admin CRUD (see Priority 6). Not fabricating placeholder copy.
+
+## Priority 12 — SEO [PARTIAL→mostly DONE]
+- **In place:** `robots.txt`, `sitemap.xml`, OG/Twitter tags, `WebSite` JSON-LD
+  (index.html), and per-product `Product` JSON-LD generated on `ProductPage` via
+  `useSEO` from live data.
+- **Remaining:** generate the sitemap from DB products; ensure canonical tags per
+  route are data-driven; add Organization JSON-LD sitewide.
 
 ---
 

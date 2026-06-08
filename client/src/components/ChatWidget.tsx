@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { X, Send, MessageCircle, Minus } from "lucide-react";
+import { hasDecided, CONSENT_EVENT } from "@/lib/consent";
 
 // Persona avatar initials and accent colours
 const PERSONA_COLOURS: Record<string, string> = {
@@ -45,6 +46,15 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
+  // Don't show the launcher until the cookie/consent banner is dealt with, so
+  // the two fixed bottom-corner elements never overlap.
+  const [consentDecided, setConsentDecided] = useState<boolean>(() => hasDecided());
+  useEffect(() => {
+    if (consentDecided) return;
+    const handler = () => setConsentDecided(true);
+    window.addEventListener(CONSENT_EVENT, handler);
+    return () => window.removeEventListener(CONSENT_EVENT, handler);
+  }, [consentDecided]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   // Stable session ID for this browser session (persisted in sessionStorage)
@@ -184,8 +194,8 @@ export default function ChatWidget() {
         }
       `}</style>
 
-      {/* Floating launcher button */}
-      {!open && (
+      {/* Floating launcher button — hidden until consent banner is resolved */}
+      {!open && consentDecided && (
         <button
           onClick={handleOpen}
           aria-label="Open chat"
