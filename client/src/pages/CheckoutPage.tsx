@@ -57,6 +57,7 @@ export default function CheckoutPage() {
   const shipping = computeShipping(totalNum);
   const orderTotal = totalNum + shipping;
 
+  const captureCart = trpc.cart.capture.useMutation();
   const createSession = trpc.checkout.createSession.useMutation({
     onSuccess: (data) => {
       if (data.url) {
@@ -86,6 +87,14 @@ export default function CheckoutPage() {
       toast.error("Please fill in all required fields.");
       return;
     }
+    // Capture for abandoned-cart recovery (consent-gated; sent only if opted in).
+    captureCart.mutate({
+      email: form.email,
+      customerName: `${form.firstName} ${form.lastName}`.trim(),
+      items: items.map(i => ({ name: i.name, qty: i.quantity })),
+      subtotal: totalNum,
+      acceptsMarketing: form.newsletter,
+    });
     setStep("payment");
     window.scrollTo(0, 0);
   };

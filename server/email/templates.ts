@@ -83,6 +83,22 @@ ${p("You asked us to let you know. Stock on our clinical serums can move quickly
 
 export interface DigestAlert { severity: string; title: string; recommendedAction: string }
 
+export function abandonedCartEmail(o: { customerName?: string; items: Array<{ name: string; qty: number }>; recoverUrl: string }): EmailContent {
+  const items = o.items.length
+    ? `<ul style="font-size:13px;color:${OBSIDIAN};padding-left:18px;margin:0 0 16px;">${o.items.map(i => `<li>${i.qty}× ${i.name}</li>`).join("")}</ul>`
+    : "";
+  const body = `${p(`Hi${o.customerName ? ` ${o.customerName}` : ""}, you left something behind.`)}
+${p("Your selections are still waiting. Mechanism over marketing — every active disclosed at its working concentration.")}
+${items}
+<div style="text-align:center;margin:24px 0;">${button(o.recoverUrl, "Complete Your Order")}</div>
+<p style="font-size:11px;color:${MUTED};">You're receiving this because you opted in at checkout. <a href="https://renicosmetics.com.au/account" style="color:${MUTED};">Manage preferences</a> or reply to unsubscribe.</p>`;
+  return {
+    subject: "You left something behind — Reni Cosmetics",
+    html: shell("Still Thinking It Over?", body),
+    text: `You left items in your cart. Complete your order: ${o.recoverUrl}`,
+  };
+}
+
 export function digestEmail(args: {
   subject: string;
   periodLabel: string;

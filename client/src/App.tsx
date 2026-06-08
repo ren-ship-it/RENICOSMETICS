@@ -49,6 +49,7 @@ const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
 const AdminDiscounts = lazy(() => import("./pages/admin/AdminDiscounts"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
+const AdminAiProposals = lazy(() => import("./pages/admin/AdminAiProposals"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
@@ -156,6 +157,11 @@ function Router() {
         <Route path="/admin/media">
           <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>
             <AdminGuard component={AdminMedia} />
+          </Suspense>
+        </Route>
+        <Route path="/admin/ai-proposals">
+          <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>
+            <AdminGuard component={AdminAiProposals} />
           </Suspense>
         </Route>
         <Route path="/admin/messages">

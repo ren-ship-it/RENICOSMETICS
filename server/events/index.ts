@@ -9,6 +9,7 @@ import { sendEmail } from "../email";
 import { orderConfirmationEmail, backInStockEmail } from "../email/templates";
 import { recomputeCustomerInsights } from "../analytics/insights";
 import { getUnnotifiedWaitlist, markWaitlistNotified, getProductBySlug } from "../db";
+import { markCartRecovered } from "../cart/router";
 
 let registered = false;
 
@@ -40,6 +41,9 @@ export function registerEventHandlers(): void {
     sendEmail({ to: payload.email, ...confirmation }).catch(() => {});
 
     recomputeCustomerInsights().catch(() => {});
+
+    // Close out any abandoned-cart record for this shopper.
+    markCartRecovered(payload.email).catch(() => {});
   });
 
   // When a product is restocked (qty goes above zero), notify everyone on its

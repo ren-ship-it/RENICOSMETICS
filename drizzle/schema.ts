@@ -441,3 +441,43 @@ export const mediaAssets = mysqlTable("mediaAssets", {
 });
 
 export type MediaAsset = typeof mediaAssets.$inferSelect;
+
+// ─── Abandoned Carts (consent-gated recovery) ───────────────────────────────
+// Captured when a shopper reaches checkout. A recovery email is only sent when
+// the shopper opted into marketing (Spam Act consent) and the cart wasn't
+// completed. Marked recovered when a matching paid order arrives.
+export const abandonedCarts = mysqlTable("abandonedCarts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  customerName: varchar("customerName", { length: 256 }),
+  items: json("items"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
+  acceptsMarketing: boolean("acceptsMarketing").default(false).notNull(),
+  visitorId: varchar("visitorId", { length: 64 }),
+  recovered: boolean("recovered").default(false).notNull(),
+  remindersSent: int("remindersSent").default(0).notNull(),
+  lastReminderAt: timestamp("lastReminderAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AbandonedCart = typeof abandonedCarts.$inferSelect;
+
+// ─── AI Edit Proposals (approval queue) ─────────────────────────────────────
+// The admin AI proposes structured changes here; an admin reviews and applies
+// them. Nothing is changed until explicitly approved (human-in-the-loop).
+export const aiProposals = mysqlTable("aiProposals", {
+  id: int("id").autoincrement().primaryKey(),
+  // "product_update" | "journal_upsert"
+  type: varchar("type", { length: 32 }).notNull(),
+  summary: varchar("summary", { length: 512 }).notNull(),
+  payload: json("payload").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "applied", "failed"]).default("pending").notNull(),
+  createdBy: varchar("createdBy", { length: 64 }),
+  instruction: text("instruction"),
+  resultNote: varchar("resultNote", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  decidedAt: timestamp("decidedAt"),
+});
+
+export type AiProposal = typeof aiProposals.$inferSelect;

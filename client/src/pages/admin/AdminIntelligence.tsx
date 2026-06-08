@@ -46,6 +46,7 @@ export default function AdminIntelligence() {
     onSuccess: () => { snapshot.refetch(); },
   });
   const sendDigest = trpc.analytics.sendDigest.useMutation();
+  const sendCartReminders = trpc.cart.sendReminders.useMutation();
 
   // ── Ask AI ────────────────────────────────────────────────────────────
   const ask = trpc.analytics.ask.useMutation();
@@ -103,6 +104,15 @@ export default function AdminIntelligence() {
               className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50"
             >
               <Send size={13} /> {sendDigest.isPending ? "Sending..." : "Email digest"}
+            </button>
+            <button
+              onClick={() => sendCartReminders.mutate({}, {
+                onSuccess: r => alert(`Sent ${r.sent} cart reminder(s) to consented shoppers (${r.candidates} eligible).`),
+              })}
+              disabled={sendCartReminders.isPending}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <Send size={13} /> {sendCartReminders.isPending ? "Sending..." : "Cart reminders"}
             </button>
             <button
               onClick={() => recompute.mutate()}

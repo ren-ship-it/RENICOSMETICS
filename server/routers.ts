@@ -17,6 +17,8 @@ import { adminAuthRouter } from "./auth/adminRouter";
 import { contentRouter } from "./content/router";
 import { reviewsRouter } from "./reviews/router";
 import { mediaRouter } from "./media/router";
+import { cartRouter } from "./cart/router";
+import { aiProposalsRouter } from "./ai/proposals";
 import { parseAssistantReply } from "./ai/replyParser";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
@@ -209,6 +211,12 @@ export const appRouter = router({
 
   // Admin media library (image uploads to object storage).
   media: mediaRouter,
+
+  // Abandoned-cart capture + consent-gated recovery emails.
+  cart: cartRouter,
+
+  // AI edit proposals (approval queue — propose, then admin approves to apply).
+  aiEdits: aiProposalsRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

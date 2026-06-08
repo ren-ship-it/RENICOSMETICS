@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, BarChart3,
   MessageSquare, Mail, Settings, LogOut, Menu, X, ChevronRight,
-  AlertTriangle, Bell, ExternalLink, Sparkles, FileText, Tag, ShieldCheck, Image,
+  AlertTriangle, Bell, ExternalLink, Sparkles, FileText, Tag, ShieldCheck, Image, Wand2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ const NAV_ITEMS: Array<{ label: string; href: string; icon: any; devOnly?: boole
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Intelligence", href: "/admin/intelligence", icon: Sparkles },
+  { label: "AI Proposals", href: "/admin/ai-proposals", icon: Wand2 },
   { label: "Content", href: "/admin/content", icon: FileText },
   { label: "Media", href: "/admin/media", icon: Image },
   { label: "Discounts", href: "/admin/discounts", icon: Tag },
