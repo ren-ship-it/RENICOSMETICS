@@ -81,6 +81,21 @@ ${p("You asked us to let you know. Stock on our clinical serums can move quickly
   };
 }
 
+export function shipmentEmail(o: { orderNumber: string; customerName?: string; trackingNumber?: string; trackingUrl?: string }): EmailContent {
+  const tracking = o.trackingNumber
+    ? `<p style="font-size:13px;color:${MUTED};margin:0 0 16px;">Tracking: <b style="color:${OBSIDIAN};">${o.trackingNumber}</b></p>`
+    : "";
+  const cta = o.trackingUrl ? `<div style="text-align:center;margin:24px 0;">${button(o.trackingUrl, "Track Your Order")}</div>` : "";
+  const body = `${p(`Good news${o.customerName ? `, ${o.customerName}` : ""} — your order ${o.orderNumber} is on its way.`)}
+${tracking}${cta}
+${p("Standard delivery is typically 2 to 3 business days within Australia.")}`;
+  return {
+    subject: `Your order has shipped — ${o.orderNumber}`,
+    html: shell("On Its Way", body),
+    text: `Your order ${o.orderNumber} has shipped.${o.trackingNumber ? ` Tracking: ${o.trackingNumber}.` : ""}${o.trackingUrl ? ` ${o.trackingUrl}` : ""}`,
+  };
+}
+
 export interface OrderEmailData {
   orderNumber: string;
   customerName?: string;

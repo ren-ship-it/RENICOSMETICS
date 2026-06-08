@@ -425,6 +425,23 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await db.updateOrderStatus(input.id, input.status, input.trackingNumber, input.trackingUrl);
+        // Notify the customer when their order ships (branded email, best-effort).
+        if (input.status === "shipped") {
+          const order = await db.getOrderById(input.id).catch(() => undefined);
+          if (order?.customerEmail) {
+            const { shipmentEmail } = await import("./email/templates");
+            const { sendEmail } = await import("./email");
+            sendEmail({
+              to: order.customerEmail,
+              ...shipmentEmail({
+                orderNumber: order.orderNumber,
+                customerName: order.customerName ?? undefined,
+                trackingNumber: input.trackingNumber ?? order.trackingNumber ?? undefined,
+                trackingUrl: input.trackingUrl ?? order.trackingUrl ?? undefined,
+              }),
+            }).catch(() => {});
+          }
+        }
         return { success: true };
       }),
   }),
