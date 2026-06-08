@@ -180,9 +180,12 @@ Each item uses the requested format. Status tags:
   touching the emitter. Storefront already reflects admin product edits live
   (P3), and the admin UI auto-refreshes via TanStack Query invalidation.
 - **Files:** `server/events/*`, `server/stripeWebhook.ts`, `server/_core/index.ts`.
-- **Remaining:** emit `stock.changed` (→ waitlist notify when restocked, low-stock
-  alert) and `product.updated` (→ cache/SEO refresh); these are easy additions on
-  the bus now that it exists.
+- **Also implemented:** `stock.changed` is emitted from admin stock changes
+  (`adjustStock`, `update`) and a handler emails everyone on a product's waitlist
+  when it is restocked, then marks them notified (closing a real gap — waitlist
+  signups previously got nothing). `server/events/index.ts`, `routers.ts`, `db.ts`.
+- **Remaining:** `product.updated` (→ cache/SEO refresh) when a CDN/cache layer
+  is added.
 
 ---
 

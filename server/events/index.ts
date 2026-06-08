@@ -6,8 +6,9 @@
 import { on } from "./bus";
 import { notifyOwner } from "../_core/notification";
 import { sendEmail } from "../email";
-import { orderConfirmationEmail } from "../email/templates";
+import { orderConfirmationEmail, backInStockEmail } from "../email/templates";
 import { recomputeCustomerInsights } from "../analytics/insights";
+import { getUnnotifiedWaitlist, markWaitlistNotified, getProductBySlug } from "../db";
 
 let registered = false;
 
@@ -39,6 +40,19 @@ export function registerEventHandlers(): void {
     sendEmail({ to: payload.email, ...confirmation }).catch(() => {});
 
     recomputeCustomerInsights().catch(() => {});
+  });
+
+  // When a product is restocked (qty goes above zero), notify everyone on its
+  // waitlist once, then mark them notified so they aren't emailed again.
+  on("stock.changed", async ({ slug, newQty }) => {
+    if (newQty <= 0) return;
+    const waiting = await getUnnotifiedWaitlist(slug);
+    if (waiting.length === 0) return;
+    const product = await getProductBySlug(slug).catch(() => undefined);
+    const name = product?.name ?? waiting[0]?.productName ?? slug;
+    const email = backInStockEmail(name, slug);
+    await Promise.all(waiting.map(w => sendEmail({ to: w.email, ...email }).catch(() => {})));
+    await markWaitlistNotified(waiting.map(w => w.id)).catch(() => {});
   });
 }
 

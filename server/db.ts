@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lte, sql, count, sum } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, sql, count, sum, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, customers, orders, orderItems,
@@ -366,6 +366,22 @@ export async function getWaitlistByProduct(productSlug: string) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(waitlist).where(eq(waitlist.productSlug, productSlug)).orderBy(desc(waitlist.createdAt));
+}
+
+/** Waitlist entries for a product that haven't been notified yet. */
+export async function getUnnotifiedWaitlist(productSlug: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(waitlist)
+    .where(and(eq(waitlist.productSlug, productSlug), eq(waitlist.notified, false)));
+}
+
+export async function markWaitlistNotified(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return;
+  await db.update(waitlist).set({ notified: true }).where(inArray(waitlist.id, ids));
 }
 
 // ─── Contact Messages ─────────────────────────────────────────────────────────

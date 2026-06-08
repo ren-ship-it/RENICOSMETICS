@@ -11,6 +11,7 @@ import * as db from "./db";
 import { analyticsRouter } from "./analytics/router";
 import { logAiDecision } from "./analytics/decisionLog";
 import { getStripe } from "./_core/stripe";
+import { emit } from "./events";
 import { customerAuthRouter } from "./auth/router";
 import { adminAuthRouter } from "./auth/adminRouter";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
@@ -319,6 +320,11 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateProduct(id, data as any);
+        // Cascade restock notifications if stock was set directly.
+        if (data.stockQty !== undefined) {
+          const updated = await db.getProductById(id);
+          if (updated) emit("stock.changed", { slug: updated.slug, newQty: updated.stockQty ?? 0 });
+        }
         return { success: true };
       }),
 
@@ -338,7 +344,10 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const product = await db.getProductById(input.id);
         if (!product) throw new TRPCError({ code: "NOT_FOUND" });
-        await db.updateProduct(input.id, { stockQty: Math.max(0, (product.stockQty ?? 0) + input.qty) });
+        const newQty = Math.max(0, (product.stockQty ?? 0) + input.qty);
+        await db.updateProduct(input.id, { stockQty: newQty });
+        // Cascade: restock notifies the waitlist (handler de-dupes via notified flag).
+        emit("stock.changed", { slug: product.slug, newQty });
         return { success: true };
       }),
   }),

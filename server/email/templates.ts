@@ -69,6 +69,18 @@ ${p("This link expires in 1 hour and can be used once. If you didn't request it,
   };
 }
 
+export function backInStockEmail(productName: string, slug: string): EmailContent {
+  const url = `https://renicosmetics.com.au/products/${slug}`;
+  const body = `${p(`Good news — ${productName} is back in stock.`)}
+${p("You asked us to let you know. Stock on our clinical serums can move quickly, so we'd grab it while it's available.")}
+<div style="text-align:center;margin:24px 0;">${button(url, "Shop Now")}</div>`;
+  return {
+    subject: `Back in stock: ${productName}`,
+    html: shell("Back in Stock", body),
+    text: `${productName} is back in stock: ${url}`,
+  };
+}
+
 export interface OrderEmailData {
   orderNumber: string;
   customerName?: string;
