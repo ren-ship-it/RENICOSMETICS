@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -29,7 +29,8 @@ export default function SystemPage() {
   
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const getProduct = (id: string) => PRODUCTS.find(p => p.id === id);
+  const { products } = useStorefrontProducts();
+  const getProduct = (id: string) => products.find(p => p.id === id);
 
   return (
     <div className="min-h-screen" style={{ background: "#FAFAF7" }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { ShoppingBag, ArrowRight, Check } from "lucide-react";
-import { PHASE1_PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -12,6 +12,7 @@ const INDIVIDUAL_TOTAL = "$593.00 AUD";
 const SAVING = "$94.00 AUD";
 
 export default function BundlePage() {
+  const PHASE1_PRODUCTS = useStorefrontProducts().products.filter(p => p.phase === 1);
   useSEO({
     title: "The Complete System Bundle",
     description: "All four Phase 1 Reni Cosmetics products. One complete structural anti-ageing protocol. Save $94 AUD.",

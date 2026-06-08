@@ -7,12 +7,13 @@ import PageErrorBoundary from "@/components/PageErrorBoundary";
 import ImageSkeleton from "@/components/ImageSkeleton";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
-import { PHASE1_PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { FREE_SHIPPING_THRESHOLD, MINIMUM_ORDER_VALUE, STANDARD_SHIPPING_COST } from "@shared/shipping";
 
 export default function CartPage() {
   const { items, count, total, removeItem, updateQty, clearCart, addItem } = useCart();
   const totalNum = items.reduce((s, i) => s + i.priceNum * i.quantity, 0);
+  const PHASE1_PRODUCTS = useStorefrontProducts().products.filter(p => p.phase === 1);
   const meetsMinSpend = totalNum >= MINIMUM_ORDER_VALUE;
   const freeShipping = totalNum >= FREE_SHIPPING_THRESHOLD;
 

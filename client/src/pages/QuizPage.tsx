@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowLeft, Check, ShoppingBag } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
+import { type Product } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -75,8 +76,6 @@ function getRecommendations(answers: Record<string, string>): string[] {
   const unique = Array.from(new Set(base)).slice(0, 3);
   return unique;
 }
-
-type Product = typeof PRODUCTS[number];
 
 function QuizProductCard({ product, index }: { product: Product; index: number }) {
   const { addItem, isInCart } = useCart();
@@ -169,10 +168,11 @@ export default function QuizPage() {
     }
   };
 
+  const { products } = useStorefrontProducts();
   const recommendations = complete ? getRecommendations(answers) : [];
   const recommendedProducts = recommendations
-    .map(slug => PRODUCTS.find(p => p.slug === slug))
-    .filter(Boolean) as typeof PRODUCTS;
+    .map(slug => products.find(p => p.slug === slug))
+    .filter(Boolean) as Product[];
 
   const handleAddAll = () => {
     recommendedProducts.filter(p => p.available).forEach(p => {

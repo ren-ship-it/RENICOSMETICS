@@ -141,8 +141,10 @@ P13.2 page *content* (journal/stockists). Operational steps: `docs/DEPLOYMENT.md
   `client/src/hooks/useStorefrontProducts.ts`, `ShopGrid.tsx`, `ShopPage.tsx`,
   `ProductPage.tsx`, `scripts/seedProducts.ts`.
 - **Remaining:** migrate secondary/presentational surfaces still importing the
-  static list (BundlePage, SystemPage, QuizPage, CartPage display, ProtocolTeaser,
-  JournalArticlePage) to the hook for full consistency.
+  static list — **DONE**: ShopGrid, ShopPage, ProductPage, BundlePage, SystemPage,
+  QuizPage, CartPage upsell, ProtocolTeaser and JournalArticlePage related
+  products all now read via `useStorefrontProducts` (DB-backed with fallback). The
+  static list is only referenced as the hook's fallback + a type import.
 
 ### 3.2 Other content not DB-backed [TODO]
 - **Issue:** Stockists, journal articles, reviews, layering guide are static/empty.

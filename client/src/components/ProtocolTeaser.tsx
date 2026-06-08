@@ -1,8 +1,6 @@
 import { Link } from "wouter";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { ArrowRight, Sun, Moon } from "lucide-react";
-
-const PHASE1 = PRODUCTS.filter(p => p.phase === 1);
 
 const PROTOCOL_STEPS = [
   {
@@ -22,6 +20,7 @@ const PROTOCOL_STEPS = [
 ];
 
 export default function ProtocolTeaser() {
+  const PHASE1 = useStorefrontProducts().products.filter(p => p.phase === 1);
   return (
     <section className="py-24 md:py-36" style={{ background: "#1E1D1D" }}>
       <div className="container">

@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
 import { useSEO } from "@/hooks/useSEO";
-import { PRODUCTS } from "@/data/products";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { trpc } from "@/lib/trpc";
 import { ARTICLES, CATEGORY_COLORS, articleFromDb, type Article } from "@/data/journal";
 
@@ -16,6 +16,7 @@ export default function JournalArticlePage() {
   // Prefer the DB-backed (admin-managed) post; fall back to the static article.
   const dbPost = trpc.content.journalBySlug.useQuery({ slug: params.slug });
   const dbList = trpc.content.journalList.useQuery();
+  const { products } = useStorefrontProducts();
   const article = dbPost.data ? articleFromDb(dbPost.data) : ARTICLES.find(a => a.id === params.slug);
 
   useSEO({
@@ -47,7 +48,7 @@ export default function JournalArticlePage() {
     );
   }
 
-  const relatedProducts = PRODUCTS.filter(p => article.relatedProductIds.includes(p.slug) && p.available);
+  const relatedProducts = products.filter(p => article.relatedProductIds.includes(p.slug) && p.available);
   const allArticles = dbList.data && dbList.data.length ? dbList.data.map(articleFromDb) : ARTICLES;
   const otherArticles = allArticles.filter(a => a.id !== article.id).slice(0, 3);
 
