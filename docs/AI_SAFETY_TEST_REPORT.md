@@ -6,10 +6,14 @@ Scope: the two AI systems on the platform.
 2. **Admin business assistant** — `analytics.ask` in `server/analytics/router.ts`
    (admin-only, business intelligence).
 
-Status: **Guardrails designed and statically verified in code.** This report
-defines the adversarial test suite and maps every attack class to its enforced
-mitigation. Live red-team execution against the production LLM should be run in
-staging using this suite before launch (the harness used here has no LLM key).
+Status: **Structural guarantees automated + passing; LLM behavioural red-team
+pending staging.** `server/ai-safety.test.ts` now automates the parts that do not
+need a live model — role-gating (anonymous is blocked from the admin AI, from
+identified at-risk customer data, and from admin CRUD), pre-LLM input validation,
+the consumer reply parser, and prompt-guardrail regression (the key refusal/anti-
+fabrication/anti-injection lines must remain in both system prompts). The
+remaining LLM *behavioural* red-team (does the model actually refuse a clever
+jailbreak) still runs in staging with a real key, using the matrix below.
 
 ## Defence architecture (why attacks fail)
 

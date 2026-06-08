@@ -15,6 +15,7 @@ import { emit } from "./events";
 import { customerAuthRouter } from "./auth/router";
 import { adminAuthRouter } from "./auth/adminRouter";
 import { contentRouter } from "./content/router";
+import { parseAssistantReply } from "./ai/replyParser";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
 //  Chat Persona System
@@ -76,7 +77,7 @@ function isBusinessHours(): boolean {
   return hour >= 9 && hour < 18;
 }
 
-const RENI_SYSTEM_PROMPT = (persona: typeof PERSONAS[0], outOfHours: boolean) => `
+export const RENI_SYSTEM_PROMPT = (persona: typeof PERSONAS[0], outOfHours: boolean) => `
 You are ${persona.name}, a ${persona.role} at Reni Cosmetics.
 Personality: ${persona.style}
 
@@ -466,12 +467,10 @@ export const appRouter = router({
         ];
 
         const response = await invokeLLM({ messages });
-        const rawContent = response.choices?.[0]?.message?.content;
-        const reply = (typeof rawContent === "string" ? rawContent : null) ?? "Sorry, I didn't catch that. Could you try again?";
-
-        // Check for escalation trigger
-        const needsEscalation = reply.includes("ESCALATE");
-        const cleanReply = reply.replace(/ESCALATE/g, "").trim();
+        // Pure, unit-tested parsing: strip the ESCALATE marker and flag it.
+        const { reply: cleanReply, escalated: needsEscalation } = parseAssistantReply(
+          response.choices?.[0]?.message?.content,
+        );
 
         if (needsEscalation) {
           await notifyOwner({

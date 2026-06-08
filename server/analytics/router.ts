@@ -41,7 +41,7 @@ const ADMIN_AI_MODEL = "reni-admin-bi-1.0";
  * prompt injection, fabrication and privacy leakage. Grounded ONLY in the
  * supplied snapshot context.
  */
-const ADMIN_AI_SYSTEM_PROMPT = (context: string, windowDays: number) => `
+export const ADMIN_AI_SYSTEM_PROMPT = (context: string, windowDays: number) => `
 You are Reni Intelligence, the private business-analyst assistant for the Reni
 Cosmetics admin team. You combine the perspective of an ecommerce analyst, a CRO
 specialist, an operations assistant and a product-intelligence analyst.
