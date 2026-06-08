@@ -636,6 +636,67 @@ export const appRouter = router({
   }),
 
   // ─── Stripe Checkout ─────────────────────────────────────────────────────────
+  // ─── Discount Codes (Stripe-backed) ─────────────────────────────────────────
+  // Codes are created as Stripe coupons + promotion codes and redeemed via the
+  // promo-code field on Stripe Checkout (allow_promotion_codes is enabled).
+  discounts: router({
+    list: adminProcedure.query(async () => {
+      const stripe = getStripe();
+      const codes = await stripe.promotionCodes.list({ limit: 100, expand: ["data.coupon"] });
+      return codes.data.map(pc => {
+        const c = (pc as any).coupon;
+        return {
+          id: pc.id,
+          code: pc.code,
+          active: pc.active,
+          percentOff: c?.percent_off ?? null,
+          amountOff: c?.amount_off ? c.amount_off / 100 : null,
+          currency: c?.currency ? String(c.currency).toUpperCase() : null,
+          maxRedemptions: pc.max_redemptions ?? null,
+          timesRedeemed: pc.times_redeemed,
+          expiresAt: pc.expires_at ? new Date(pc.expires_at * 1000).toISOString() : null,
+        };
+      });
+    }),
+
+    create: adminProcedure
+      .input(
+        z
+          .object({
+            code: z.string().min(3).max(40).trim().toUpperCase(),
+            percentOff: z.number().min(1).max(100).optional(),
+            amountOff: z.number().positive().max(100000).optional(),
+            maxRedemptions: z.number().int().positive().optional(),
+            expiresAt: z.string().optional(),
+          })
+          .refine(d => d.percentOff != null || d.amountOff != null, {
+            message: "Provide either a percent or an amount off.",
+          }),
+      )
+      .mutation(async ({ input }) => {
+        const stripe = getStripe();
+        const coupon = await stripe.coupons.create(
+          input.percentOff != null
+            ? { percent_off: input.percentOff, duration: "once", name: input.code }
+            : { amount_off: Math.round(input.amountOff! * 100), currency: "aud", duration: "once", name: input.code },
+        );
+        const promo = await stripe.promotionCodes.create({
+          coupon: coupon.id,
+          code: input.code,
+          ...(input.maxRedemptions ? { max_redemptions: input.maxRedemptions } : {}),
+          ...(input.expiresAt ? { expires_at: Math.floor(new Date(input.expiresAt).getTime() / 1000) } : {}),
+        } as any);
+        return { ok: true, id: promo.id, code: promo.code };
+      }),
+
+    setActive: adminProcedure
+      .input(z.object({ id: z.string(), active: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await getStripe().promotionCodes.update(input.id, { active: input.active });
+        return { ok: true };
+      }),
+  }),
+
   checkout: router({
     createSession: publicProcedure
       .input(z.object({

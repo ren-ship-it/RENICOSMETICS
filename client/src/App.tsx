@@ -46,6 +46,7 @@ const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
 const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
+const AdminDiscounts = lazy(() => import("./pages/admin/AdminDiscounts"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
@@ -138,6 +139,11 @@ function Router() {
         <Route path="/admin/content">
           <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>
             <AdminGuard component={AdminContent} />
+          </Suspense>
+        </Route>
+        <Route path="/admin/discounts">
+          <Suspense fallback={<div className="min-h-screen bg-[#111] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#C9A96E] border-t-transparent rounded-full animate-spin" /></div>}>
+            <AdminGuard component={AdminDiscounts} />
           </Suspense>
         </Route>
         <Route path="/admin/messages">
