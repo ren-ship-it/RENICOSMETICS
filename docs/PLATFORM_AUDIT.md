@@ -18,6 +18,27 @@ Each item uses the requested format. Status tags:
 > & consent, AI guardrails) and are documented in `docs/ANALYTICS_ARCHITECTURE.md`,
 > `docs/AI_AND_AUTOMATED_DECISIONS.md` and `docs/AI_SAFETY_TEST_REPORT.md`.
 
+## Post-audit feature build (added after the initial 13 priorities)
+
+Done: refunds/cancellations (Stripe + restock + email), discount codes
+(Stripe-backed + admin UI), proactive digest email delivery, product reviews
+(collection + moderation + display), GST display, data-retention purge job,
+customer order-detail view, product hide/draft (available=false now truly hides;
+stock=0 = sold-out), **MFA (TOTP) for admins**, and an **admin media library**
+(image uploads to object storage). New tables: `reviews`, `mediaAssets`; new user
+columns `mfaSecret`/`mfaEnabled` — apply with `pnpm db:push`.
+
+Deliberately NOT built (decisions, not oversights):
+- **Product variants** — the brand is intentionally single-SKU (one fixed size
+  per product); a variant system would be speculative over-engineering. Revisit
+  only if multi-size SKUs are introduced.
+- **Abandoned-cart *customer* emails** — emailing non-purchasers needs cart-time
+  email capture + marketing consent; owner-facing alerts/digest were built
+  instead. This is a consent/marketing decision to make before building.
+- **AI-edit approval queue** — the admin AI is advisory-only, so there are no
+  AI-authored edits to approve yet; the propose-only design + `aiDecisionLog`
+  are the foundation for it.
+
 ## Status summary (live)
 
 **Done:** P1 (orders/stock/Stripe), P2.1 (customer auth) + 2.3 (brute-force),
