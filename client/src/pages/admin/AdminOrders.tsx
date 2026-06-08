@@ -64,6 +64,17 @@ export default function AdminOrders() {
     onError: (e) => toast.error(e.message),
   });
 
+  const refundMutation = trpc.orders.refund.useMutation({
+    onSuccess: () => {
+      toast.success("Refund processed");
+      setSelectedOrder(null);
+      utils.orders.list.invalidate();
+      utils.admin.stats.invalidate();
+      utils.admin.recentOrders.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const totalRevenue = orders?.reduce((sum, o) => sum + (o.paymentStatus === "paid" ? Number(o.total) : 0), 0) ?? 0;
 
   return (
@@ -255,15 +266,31 @@ export default function AdminOrders() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSelectedOrder(null)} className="text-gray-400">Cancel</Button>
-            <Button
-              onClick={() => selectedOrder && updateStatusMutation.mutate({ id: selectedOrder.id, status: newStatus as any, trackingNumber: trackingNumber || undefined, trackingUrl: trackingUrl || undefined })}
-              disabled={updateStatusMutation.isPending || newStatus === selectedOrder?.status}
-              className="bg-[#C9A96E] hover:bg-[#b8955a] text-black font-semibold"
-            >
-              {updateStatusMutation.isPending ? "Saving..." : "Update Order"}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between">
+            {selectedOrder?.paymentStatus === "paid" ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (selectedOrder && window.confirm(`Refund $${Number(selectedOrder.total).toFixed(2)} for ${selectedOrder.orderNumber} and restock items?`)) {
+                    refundMutation.mutate({ id: selectedOrder.id, restock: true });
+                  }
+                }}
+                disabled={refundMutation.isPending}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                {refundMutation.isPending ? "Refunding..." : "Refund Order"}
+              </Button>
+            ) : <span />}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setSelectedOrder(null)} className="text-gray-400">Cancel</Button>
+              <Button
+                onClick={() => selectedOrder && updateStatusMutation.mutate({ id: selectedOrder.id, status: newStatus as any, trackingNumber: trackingNumber || undefined, trackingUrl: trackingUrl || undefined })}
+                disabled={updateStatusMutation.isPending || newStatus === selectedOrder?.status}
+                className="bg-[#C9A96E] hover:bg-[#b8955a] text-black font-semibold"
+              >
+                {updateStatusMutation.isPending ? "Saving..." : "Update Order"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

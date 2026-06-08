@@ -235,6 +235,23 @@ export async function updateOrderStatus(id: number, status: string, trackingNumb
   await db.update(orders).set({ status: status as any, ...(trackingNumber ? { trackingNumber } : {}), ...(trackingUrl ? { trackingUrl } : {}), updatedAt: new Date() }).where(eq(orders.id, id));
 }
 
+/** Mark an order refunded (status + paymentStatus). */
+export async function markOrderRefunded(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(orders).set({ status: "refunded", paymentStatus: "refunded", updatedAt: new Date() }).where(eq(orders.id, id));
+}
+
+/** Return stock to inventory (e.g. on refund/cancellation). */
+export async function incrementStockBySlug(slug: string, qty: number) {
+  const db = await getDb();
+  if (!db || qty <= 0 || !slug) return;
+  await db
+    .update(products)
+    .set({ stockQty: sql`${products.stockQty} + ${qty}`, updatedAt: new Date() })
+    .where(eq(products.slug, slug));
+}
+
 export async function getOrdersByCustomer(customerEmail: string) {
   const db = await getDb();
   if (!db) return [];

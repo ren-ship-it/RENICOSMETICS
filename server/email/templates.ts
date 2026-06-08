@@ -81,6 +81,17 @@ ${p("You asked us to let you know. Stock on our clinical serums can move quickly
   };
 }
 
+export function refundEmail(o: { orderNumber: string; customerName?: string; amount?: number; currency?: string }): EmailContent {
+  const amt = o.amount !== undefined ? `$${o.amount.toFixed(2)}${o.currency ? ` ${o.currency}` : ""}` : "your payment";
+  const body = `${p(`Hi${o.customerName ? ` ${o.customerName}` : ""}, we've processed a refund of ${amt} for order ${o.orderNumber}.`)}
+${p("Refunds usually take 5 to 10 business days to appear on your statement, depending on your bank. If you have any questions, just reply to this email or contact hello@renicosmetics.com.au.")}`;
+  return {
+    subject: `Refund processed — ${o.orderNumber}`,
+    html: shell("Refund Processed", body),
+    text: `We've refunded ${amt} for order ${o.orderNumber}. Allow 5-10 business days.`,
+  };
+}
+
 export function shipmentEmail(o: { orderNumber: string; customerName?: string; trackingNumber?: string; trackingUrl?: string }): EmailContent {
   const tracking = o.trackingNumber
     ? `<p style="font-size:13px;color:${MUTED};margin:0 0 16px;">Tracking: <b style="color:${OBSIDIAN};">${o.trackingNumber}</b></p>`

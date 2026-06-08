@@ -444,6 +444,50 @@ export const appRouter = router({
         }
         return { success: true };
       }),
+
+    // Refund (and optionally restock) an order via Stripe.
+    refund: adminProcedure
+      .input(z.object({ id: z.number(), restock: z.boolean().default(true) }))
+      .mutation(async ({ input }) => {
+        const order = await db.getOrderWithItems(input.id);
+        if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+        if (order.paymentStatus === "refunded") return { success: true, alreadyRefunded: true } as const;
+
+        if (order.stripePaymentIntentId) {
+          try {
+            await getStripe().refunds.create({ payment_intent: order.stripePaymentIntentId });
+          } catch (e) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Stripe refund failed: ${e instanceof Error ? e.message : "unknown error"}`,
+            });
+          }
+        }
+
+        await db.markOrderRefunded(input.id);
+
+        if (input.restock) {
+          for (const item of order.items) {
+            if (item.productSlug) await db.incrementStockBySlug(item.productSlug, item.quantity).catch(() => {});
+          }
+        }
+
+        // Branded refund email + recompute insights (best-effort).
+        if (order.customerEmail) {
+          const { refundEmail } = await import("./email/templates");
+          const { sendEmail } = await import("./email");
+          sendEmail({
+            to: order.customerEmail,
+            ...refundEmail({
+              orderNumber: order.orderNumber,
+              customerName: order.customerName ?? undefined,
+              amount: Number(order.total),
+              currency: order.currency ?? "AUD",
+            }),
+          }).catch(() => {});
+        }
+        return { success: true } as const;
+      }),
   }),
 
   // --- Chat ---
