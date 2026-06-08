@@ -15,6 +15,7 @@ import { emit } from "./events";
 import { customerAuthRouter } from "./auth/router";
 import { adminAuthRouter } from "./auth/adminRouter";
 import { contentRouter } from "./content/router";
+import { reviewsRouter } from "./reviews/router";
 import { parseAssistantReply } from "./ai/replyParser";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
@@ -201,6 +202,9 @@ export const appRouter = router({
 
   // Admin-managed content: Journal posts and Stockists.
   content: contentRouter,
+
+  // Product reviews (public submit/list + admin moderation).
+  reviews: reviewsRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

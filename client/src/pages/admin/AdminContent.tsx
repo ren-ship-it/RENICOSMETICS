@@ -1,9 +1,9 @@
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, X, FileText, MapPin, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, X, FileText, MapPin, Loader2, Star, Check, Ban } from "lucide-react";
 
-type Tab = "journal" | "stockists";
+type Tab = "journal" | "stockists" | "reviews";
 
 const field = "w-full bg-[#111] border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A96E]/50";
 const label = "block text-[11px] uppercase tracking-wider text-gray-500 mb-1";
@@ -151,6 +151,48 @@ function StockistManager() {
   );
 }
 
+function ReviewsManager() {
+  const utils = trpc.useUtils();
+  const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const list = trpc.reviews.adminList.useQuery({ status });
+  const moderate = trpc.reviews.moderate.useMutation({ onSuccess: () => utils.reviews.adminList.invalidate() });
+  const remove = trpc.reviews.remove.useMutation({ onSuccess: () => utils.reviews.adminList.invalidate() });
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-4">
+        {(["pending", "approved", "rejected", "all"] as const).map(s => (
+          <button key={s} onClick={() => setStatus(s)} className={`px-3 py-1.5 text-[11px] rounded-md capitalize ${status === s ? "bg-[#C9A96E]/20 text-[#C9A96E]" : "text-gray-500 hover:text-gray-300"}`}>{s}</button>
+        ))}
+      </div>
+      {list.isLoading ? <p className="text-sm text-gray-500">Loading…</p> : (list.data?.length ?? 0) === 0 ? (
+        <p className="text-sm text-gray-500 py-8 text-center">No {status === "all" ? "" : status} reviews.</p>
+      ) : (
+        <div className="space-y-2">
+          {list.data!.map(r => (
+            <div key={r.id} className="bg-[#1a1a1a] border border-white/8 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} fill={i < r.rating ? "#6B7A3E" : "transparent"} color="#6B7A3E" />)}</span>
+                  <span className="text-xs text-white">{r.customerName}</span>
+                  <span className="text-[11px] text-gray-500">· {r.productSlug} · <span className={r.status === "approved" ? "text-green-400" : r.status === "rejected" ? "text-red-400" : "text-amber-400"}>{r.status}</span></span>
+                </div>
+                <div className="flex gap-1">
+                  {r.status !== "approved" && <button onClick={() => moderate.mutate({ id: r.id, status: "approved", verified: true })} className="p-1.5 text-gray-400 hover:text-green-400" aria-label="Approve"><Check size={14} /></button>}
+                  {r.status !== "rejected" && <button onClick={() => moderate.mutate({ id: r.id, status: "rejected" })} className="p-1.5 text-gray-400 hover:text-amber-400" aria-label="Reject"><Ban size={14} /></button>}
+                  <button onClick={() => { if (confirm("Delete this review?")) remove.mutate({ id: r.id }); }} className="p-1.5 text-gray-400 hover:text-red-400" aria-label="Delete"><Trash2 size={14} /></button>
+                </div>
+              </div>
+              {r.title && <p className="text-sm text-white">{r.title}</p>}
+              <p className="text-[13px] text-gray-300">{r.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminContent() {
   const [tab, setTab] = useState<Tab>("journal");
   return (
@@ -161,8 +203,9 @@ export default function AdminContent() {
         <div className="flex gap-1 mb-6 p-1 rounded-lg bg-white/5 w-fit">
           <button onClick={() => setTab("journal")} className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md ${tab === "journal" ? "bg-[#C9A96E] text-black" : "text-gray-400"}`}><FileText size={13} /> Journal</button>
           <button onClick={() => setTab("stockists")} className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md ${tab === "stockists" ? "bg-[#C9A96E] text-black" : "text-gray-400"}`}><MapPin size={13} /> Stockists</button>
+          <button onClick={() => setTab("reviews")} className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md ${tab === "reviews" ? "bg-[#C9A96E] text-black" : "text-gray-400"}`}><Star size={13} /> Reviews</button>
         </div>
-        {tab === "journal" ? <JournalManager /> : <StockistManager />}
+        {tab === "journal" ? <JournalManager /> : tab === "stockists" ? <StockistManager /> : <ReviewsManager />}
       </div>
     </AdminLayout>
   );

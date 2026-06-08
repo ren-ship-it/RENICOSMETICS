@@ -9,6 +9,7 @@ import StickyCartBar from "@/components/StickyCartBar";
 import ImageLightbox, { ZoomTrigger } from "@/components/ImageLightbox";
 import ImageSkeleton from "@/components/ImageSkeleton";
 import NotifyMeModal from "@/components/NotifyMeModal";
+import ProductReviews from "@/components/ProductReviews";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -445,6 +446,11 @@ export default function ProductPage() {
             </div>
           </div>
         </section>
+
+        {/* Customer Reviews */}
+        <div className="container max-w-3xl pb-4">
+          <ProductReviews productSlug={product.slug} productName={product.name} />
+        </div>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

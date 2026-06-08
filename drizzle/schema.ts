@@ -410,3 +410,20 @@ export const stockists = mysqlTable("stockists", {
 
 export type Stockist = typeof stockists.$inferSelect;
 export type InsertStockist = typeof stockists.$inferInsert;
+
+// ─── Product Reviews (moderated) ────────────────────────────────────────────
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  productSlug: varchar("productSlug", { length: 128 }).notNull(),
+  customerName: varchar("customerName", { length: 128 }).notNull(),
+  location: varchar("location", { length: 128 }),
+  rating: int("rating").notNull(), // 1-5
+  title: varchar("title", { length: 200 }),
+  body: text("body").notNull(),
+  verified: boolean("verified").default(false).notNull(), // verified buyer
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;

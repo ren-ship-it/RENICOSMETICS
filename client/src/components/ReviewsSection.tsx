@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Star } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 /**
  * ReviewsSection — Phase 1 Launch
@@ -8,7 +9,7 @@ import { Star } from "lucide-react";
  * Replace with real customer reviews and a verified review platform
  * (e.g., Okendo, Yotpo) once post-launch reviews are collected.
  */
-const reviews = [
+const STATIC_REVIEWS = [
   {
     name: "Sarah M.",
     location: "Melbourne, VIC",
@@ -34,6 +35,10 @@ const reviews = [
 
 export default function ReviewsSection() {
   const ref = useRef<HTMLDivElement>(null);
+  const featured = trpc.reviews.featured.useQuery({ limit: 6 });
+  const reviews = featured.data && featured.data.length
+    ? featured.data.map(r => ({ name: r.customerName, location: r.location ?? "", rating: r.rating, text: r.body, product: r.productSlug }))
+    : STATIC_REVIEWS;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
