@@ -418,6 +418,10 @@ export default function CheckoutPage() {
                       {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
+                  <div className="flex justify-between text-xs" style={{ color: "rgba(45,44,44,0.6)" }}>
+                    <span>GST (incl. 10%)</span>
+                    <span>${(orderTotal / 11).toFixed(2)}</span>
+                  </div>
                   <div className="flex justify-between text-sm font-semibold pt-1 border-t" style={{ borderColor: "rgba(45,44,44,0.12)", color: "#2D2C2C" }}>
                     <span>Total</span>
                     <div className="text-right">

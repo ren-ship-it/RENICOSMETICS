@@ -255,6 +255,10 @@ export default function CartPage() {
                         {freeShipping ? "Free" : `$${STANDARD_SHIPPING_COST.toFixed(2)}`}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs" style={{ color: "rgba(45,44,44,0.6)" }}>GST (incl. 10%)</span>
+                      <span className="text-xs" style={{ color: "rgba(45,44,44,0.6)" }}>${(totalNum / 11).toFixed(2)}</span>
+                    </div>
                     <div className="w-full h-px" style={{ background: "rgba(45,44,44,0.12)" }} />
                     <div className="flex justify-between">
                       <span className="text-sm font-semibold" style={{ color: "#2D2C2C" }}>Total</span>

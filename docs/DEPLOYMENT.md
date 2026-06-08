@@ -37,7 +37,8 @@ Set these to enable the remaining flows:
 |---|---|
 | `STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` | Checkout |
 | `STRIPE_WEBHOOK_SECRET` | Order creation (point Stripe at `/api/stripe/webhook`) |
-| `RESEND_API_KEY` (+ optional `EMAIL_FROM`, `APP_URL`) | Transactional email (order confirmation, password reset, welcome, back-in-stock) |
+| `RESEND_API_KEY` (+ optional `EMAIL_FROM`, `APP_URL`) | Transactional email (order confirmation, shipment, refund, password reset, welcome, back-in-stock) |
+| `OWNER_EMAIL` | Where the business digest email is sent (else owner notification only) |
 | `VITE_GA4_MEASUREMENT_ID` | Optional GA4 mirror (first-party analytics work without it) |
 
 Until `RESEND_API_KEY` is set, emails are logged to the console and the password
@@ -76,4 +77,12 @@ cookie banner → consent → analytics flow.
 |---|---|
 | `pnpm admin:create <email> <pw> [name]` | Create/reset an admin |
 | `pnpm seed:products` | Seed/sync the catalogue (keeps admin stock) |
+| `pnpm seed:content` | Seed Journal + Stockists from existing content |
 | `pnpm gen:register` | Regenerate the data-collection register |
+| `pnpm purge:retention` | Delete data past its retention window (run daily via cron) |
+
+## Scheduled jobs (cron)
+
+- `pnpm purge:retention` — daily (data-retention compliance).
+- `analytics.sendDigest` (tRPC, admin) — weekly, for the business digest email.
+  Trigger via an authenticated scheduled call, or the "Email digest" button.
