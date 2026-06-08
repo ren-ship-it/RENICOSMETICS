@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, BarChart3,
   MessageSquare, Mail, Settings, LogOut, Menu, X, ChevronRight,
-  AlertTriangle, Bell, ExternalLink, Sparkles, FileText, Tag,
+  AlertTriangle, Bell, ExternalLink, Sparkles, FileText, Tag, ShieldCheck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const NAV_ITEMS: Array<{ label: string; href: string; icon: any; devOnly?: boole
   { label: "Messages", href: "/admin/messages", icon: MessageSquare },
   { label: "Subscribers", href: "/admin/subscribers", icon: Mail },
   { label: "Chat Logs", href: "/admin/chat-logs", icon: MessageSquare },
+  { label: "Security", href: "/admin/security", icon: ShieldCheck },
   // Internal load-testing tool — hidden from the nav in production so it can't be
   // triggered accidentally (the route itself remains admin-gated).
   { label: "Stress Test", href: "/admin/stress-test", icon: AlertTriangle, devOnly: true },

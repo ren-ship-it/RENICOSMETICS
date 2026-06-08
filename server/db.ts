@@ -50,6 +50,12 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function setUserMfa(id: number, mfaSecret: string | null, mfaEnabled: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ mfaSecret, mfaEnabled }).where(eq(users.id, id));
+}
+
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

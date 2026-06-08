@@ -20,6 +20,9 @@ export const users = mysqlTable("users", {
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   // First-party admin login (parallel to Manus OAuth). Null for OAuth-only users.
   passwordHash: varchar("passwordHash", { length: 256 }),
+  // TOTP multi-factor auth (base32 secret). mfaEnabled gates enforcement at login.
+  mfaSecret: varchar("mfaSecret", { length: 64 }),
+  mfaEnabled: boolean("mfaEnabled").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
