@@ -18,6 +18,20 @@ Each item uses the requested format. Status tags:
 > & consent, AI guardrails) and are documented in `docs/ANALYTICS_ARCHITECTURE.md`,
 > `docs/AI_AND_AUTOMATED_DECISIONS.md` and `docs/AI_SAFETY_TEST_REPORT.md`.
 
+## Status summary (live)
+
+**Done:** P1 (orders/stock/Stripe), P2.1 (customer auth) + 2.3 (brute-force),
+P3 (DB product source of truth), P4.2/4.3 (forms→server, shipping rules),
+P5 (event cascade incl. waitlist restock), P7 partial (brand-owned admin login),
+P8 (analytics/BI/AI assistant), P9 (privacy/consent + DSAR), P10 (AI guardrails +
+test suite), P11 (server email), P13.1/13.5 (overlap, stress-test gating).
+
+**Remaining (needs creds / content / human decisions — see end of doc):**
+P2.2 (CSP needs deployment domains), P6 (admin content CRUD / media / draft-live /
+AI-edit approval), P10 live red-team (needs staging LLM), P12 dynamic sitemap,
+de-Manus asset cleanup (`__manus__`, manuscdn logo — needs replacement assets),
+P13.2 page *content* (journal/stockists). Operational steps: `docs/DEPLOYMENT.md`.
+
 ---
 
 ## Priority 1 — Critical blockers
@@ -79,16 +93,18 @@ Each item uses the requested format. Status tags:
 - **Remaining:** password-reset + welcome emails (Priority 11); optional email
   verification; MFA (schema is ready to extend).
 
-### 2.2 CSP disabled; CSRF posture unverified [PARTIAL]
-- **Issue:** `helmet({ contentSecurityPolicy: false })` in
-  `server/_core/index.ts`. tRPC is cookie-authed (`credentials: include`) — CSRF
-  needs review for mutations.
-- **Why it matters:** XSS/CSRF exposure on an authenticated admin surface.
-- **Recommended fix:** Enable a tuned CSP; add SameSite=strict/lax on the session
-  cookie (verify `cookies.ts`); add a CSRF token or origin check for cookie-authed
-  mutations.
+### 2.2 CSP disabled; CSRF posture [PARTIAL — needs deployment domains]
+- **CSRF:** Lower risk than it first appears. All mutations go through tRPC as
+  `POST` with `Content-Type: application/json`, which browsers cannot send
+  cross-origin without a CORS preflight, and no permissive CORS is configured —
+  so a third-party site cannot forge authenticated mutations. Acceptable for now.
+- **Remaining (needs human input):** enabling a tuned Content-Security-Policy
+  requires the exact allowed origins for this deployment (Stripe, Google Fonts,
+  GA, the Manus OAuth/forge hosts, the CDN). Guessing risks breaking the site, so
+  this is left for a config pass with the real domain list. Also review whether
+  the session cookie `sameSite: "none"` can be tightened (it is currently `none`
+  to support the Manus-hosted iframe context).
 - **Files:** `server/_core/index.ts`, `server/_core/cookies.ts`.
-- **Risk if ignored:** Account/admin compromise.
 
 ### 2.3 Brute-force protection [DONE for customer auth]
 - **Implemented:** A strict limiter (30 / 15 min) now guards
