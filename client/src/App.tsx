@@ -174,7 +174,10 @@ export default function App() {
         <CartProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <a href="#main-content" className="skip-link">Skip to content</a>
+            <div id="main-content" tabIndex={-1}>
+              <Router />
+            </div>
             <CookieConsent />
             <ChatWidgetWrapper />
           </TooltipProvider>

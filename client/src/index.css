@@ -299,3 +299,48 @@
   .reveal-delay-3 { transition-delay: 0.3s; }
   .reveal-delay-4 { transition-delay: 0.4s; }
 }
+
+/* ─── Accessibility & motion preferences ─────────────────────────────────── */
+
+/* Visible keyboard focus for interactive elements (sage accent). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #6B7A3E;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skip-to-content link, visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: #2D2C2C;
+  color: #EAEADF;
+  padding: 10px 16px;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+}
+
+/* Respect users who prefer reduced motion: disable scroll/entrance animations. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

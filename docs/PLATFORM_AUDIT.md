@@ -349,9 +349,19 @@ P13.2 page *content* (journal/stockists). Operational steps: `docs/DEPLOYMENT.md
 - **Status:** The new Intelligence dashboard has explicit loading/empty/honesty
   states. Audit the rest of the app for consistent states.
 
-### 13.4 Accessibility pass [TODO]
-- **Issue:** Needs a heading-hierarchy, contrast, focus-visible, alt-text and
-  keyboard-nav sweep across pages.
+### 13.4 Accessibility pass [PARTIAL]
+- **Implemented:** Global `:focus-visible` keyboard outlines, skip-to-content link
+  + focusable `#main-content`, and `prefers-reduced-motion` support (disables
+  scroll/entrance animations). `client/src/index.css`, `App.tsx`.
+- **Remaining:** per-page heading-hierarchy/contrast/alt-text sweep on real
+  devices (recommended in `docs/QA_REPORT.md`).
+
+### 13.6 QA [PARTIAL — see docs/QA_REPORT.md]
+- **Done:** typecheck, 28 unit tests, production build, and a static internal
+  link/route audit all pass. Found one dead breadcrumb in the unrouted
+  `ComponentShowcase` demo page (flagged).
+- **Remaining (needs staging):** live browser click-through, real Stripe order,
+  DB-dependent flows, and the LLM behavioural red-team.
 
 ### 13.5 Admin "Stress Test" tool in production [DONE]
 - **Implemented:** The Stress Test nav item is hidden in production builds
