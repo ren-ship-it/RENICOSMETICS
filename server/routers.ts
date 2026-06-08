@@ -518,6 +518,7 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email(), source: z.string().default("footer") }))
       .mutation(async ({ input }) => {
         await db.addSubscriber(input.email, input.source);
+        notifyOwner({ title: "New newsletter subscriber", content: `${input.email} (via ${input.source})` }).catch(() => {});
         return { success: true };
       }),
   }),
@@ -527,6 +528,7 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email(), productSlug: z.string(), productName: z.string().optional() }))
       .mutation(async ({ input }) => {
         await db.addToWaitlist(input.email, input.productSlug, input.productName);
+        notifyOwner({ title: "New waitlist signup", content: `${input.email} for ${input.productName ?? input.productSlug}` }).catch(() => {});
         return { success: true };
       }),
 

@@ -6,7 +6,7 @@ import PageErrorBoundary from "@/components/PageErrorBoundary";
 import { useSEO } from "@/hooks/useSEO";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { trpc } from "@/lib/trpc";
-import { LogOut, Package, User, Mail, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
+import { LogOut, Package, User, Mail, ShieldCheck, Loader2, CheckCircle2, Download, Trash2 } from "lucide-react";
 
 const OBSIDIAN = "#2D2C2C";
 const ALABASTER = "#FAFAF7";
@@ -163,6 +163,31 @@ function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
   const [lastName, setLastName] = useState(customer?.lastName ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [saved, setSaved] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deletionDone, setDeletionDone] = useState(false);
+  const deletion = trpc.customerAuth.requestAccountDeletion.useMutation();
+
+  const exportData = async () => {
+    setExporting(true);
+    try {
+      const data = await utils.customerAuth.exportMyData.fetch();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reni-cosmetics-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const requestDeletion = () => {
+    if (deletionDone) return;
+    if (!window.confirm("Request deletion of your account? We'll action this within 30 days. Order records are retained as required by law.")) return;
+    deletion.mutate({}, { onSuccess: () => setDeletionDone(true) });
+  };
 
   useEffect(() => {
     setFirstName(customer?.firstName ?? "");
@@ -256,9 +281,22 @@ function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
         <p className="text-[10px] mt-2" style={{ color: "rgba(45,44,44,0.4)" }}>We honour your choice in line with the Spam Act 2003. You can change this anytime.</p>
       </section>
 
-      <div className="flex items-center gap-2 text-[11px]" style={{ color: "rgba(45,44,44,0.4)" }}>
-        <ShieldCheck size={13} /> Your data is handled per our <Link href="/privacy"><span className="underline cursor-pointer">Privacy Policy</span></Link>.
-      </div>
+      {/* Data & privacy (DSAR) */}
+      <section>
+        <div className="flex items-center gap-2 mb-4"><ShieldCheck size={15} style={{ color: SAGE }} /><h3 className="text-sm font-semibold" style={{ color: OBSIDIAN }}>Your Data & Privacy</h3></div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button onClick={exportData} disabled={exporting} className="flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] tracking-widest uppercase font-medium border rounded-md hover:opacity-80 disabled:opacity-50" style={{ borderColor: "rgba(45,44,44,0.2)", color: OBSIDIAN }}>
+            <Download size={13} /> {exporting ? "Preparing…" : "Download my data"}
+          </button>
+          <button onClick={requestDeletion} disabled={deletion.isPending || deletionDone} className="flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] tracking-widest uppercase font-medium border rounded-md hover:opacity-80 disabled:opacity-50" style={{ borderColor: "rgba(179,38,30,0.4)", color: "#b3261e" }}>
+            <Trash2 size={13} /> {deletionDone ? "Request received" : "Request account deletion"}
+          </button>
+        </div>
+        <p className="text-[10px] mt-2" style={{ color: "rgba(45,44,44,0.4)" }}>
+          Access and deletion requests are handled per the{" "}
+          <Link href="/privacy"><span className="underline cursor-pointer">Privacy Policy</span></Link> (APP 12/13). Order records are retained for 7 years to meet Australian tax law.
+        </p>
+      </section>
     </div>
   );
 }

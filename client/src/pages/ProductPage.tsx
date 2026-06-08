@@ -506,6 +506,7 @@ export default function ProductPage() {
         {/* Notify Me modal */}
         <NotifyMeModal
           productName={product.name}
+          productSlug={product.slug}
           isOpen={notifyOpen}
           onClose={() => setNotifyOpen(false)}
         />

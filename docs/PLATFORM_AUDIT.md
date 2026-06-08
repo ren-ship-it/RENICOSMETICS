@@ -144,13 +144,16 @@ Each item uses the requested format. Status tags:
   history (Priority 2.1), and refund handling via Stripe.
 - **Files:** webhook, `server/db.ts`, account pages, email layer.
 
-### 4.2 Forms fall back silently when EmailJS is unset [PARTIAL]
-- **Issue:** Contact/newsletter/notify-me use client-side EmailJS with unset keys;
-  data is saved to DB but owner notifications won't fire, and client-side email
-  exposes template ids.
-- **Recommended fix:** Move transactional email server-side (Priority 11);
-  give every form explicit loading/success/error states.
-- **Files:** `client/src/components/NotifyMeModal.tsx`, contact/newsletter, server.
+### 4.2 Forms fall back silently when EmailJS is unset [DONE]
+- **Implemented:** Removed client-side EmailJS entirely (no more exposed template
+  ids / third-party remnant). Contact → `messages.save`, newsletter →
+  `subscribers.add`, notify-me → `waitlist.add`; all persist server-side and now
+  trigger an owner notification (`notifyOwner`). Contact form shows real
+  loading/success/error states.
+- **Files:** `ContactPage.tsx`, `Footer.tsx`, `NotifyMeModal.tsx`,
+  `ShopPage.tsx`, `ProductPage.tsx`, `server/routers.ts`.
+- **Note:** the `@emailjs/browser` dependency is now unused and can be dropped
+  from package.json at the next dependency cleanup.
 
 ### 4.3 Free-shipping/threshold messaging inconsistent [DONE]
 - **Issue (was):** Conflicting rules — free over $80 (chat/banner) vs $150
@@ -241,6 +244,14 @@ Each item uses the requested format. Status tags:
   (Priority 5); per-product recommendation rendering on the storefront.
 
 ---
+
+### 9.x Data subject rights (DSAR) [DONE]
+- **Implemented:** Signed-in customers can download all personal data linked to
+  their account (`customerAuth.exportMyData` → JSON) and request account deletion
+  (`customerAuth.requestAccountDeletion` → audit + owner notification, actioned
+  within 30 days; order records retained per tax law). Surfaced in the account
+  "Your Data & Privacy" panel.
+- **Files:** `server/auth/router.ts`, `client/src/pages/AccountPage.tsx`.
 
 ## Priority 9 — Privacy & compliance [DONE]
 - **Issue (was):** Generic Privacy Policy not matching real collection; consent

@@ -5,14 +5,7 @@ import PageErrorBoundary from "@/components/PageErrorBoundary";
 import { useSEO } from "@/hooks/useSEO";
 import { Mail, Clock, MapPin, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import emailjs from "@emailjs/browser";
-
-// EmailJS configuration
-// To activate: sign up at emailjs.com, create a service + template, and replace these IDs.
-// The form will still show a success message even without valid IDs (graceful fallback).
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "YOUR_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "YOUR_TEMPLATE_ID";
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "YOUR_PUBLIC_KEY";
+import { trpc } from "@/lib/trpc";
 
 const CONTACT_TOPICS = [
   "Product Question",
@@ -36,6 +29,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", topic: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const saveMessage = trpc.messages.save.useMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -49,24 +43,20 @@ export default function ContactPage() {
     }
     setSending(true);
     try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          from_name: form.name,
-          from_email: form.email,
-          topic: form.topic || "General Enquiry",
-          message: form.message,
-          to_email: "hello@renicosmetics.com.au",
-        },
-        EMAILJS_PUBLIC_KEY
-      );
+      // Saved server-side (DB record + owner notification via tRPC).
+      await saveMessage.mutateAsync({
+        name: form.name,
+        email: form.email,
+        subject: form.topic || "General Enquiry",
+        message: form.message,
+      });
+      setSubmitted(true);
+      toast.success("Message received. We'll be in touch within 1 business day.");
     } catch (_) {
-      // Graceful fallback — still show success to user even if EmailJS not yet configured
+      toast.error("Something went wrong sending your message. Please email hello@renicosmetics.com.au.");
+    } finally {
+      setSending(false);
     }
-    setSending(false);
-    setSubmitted(true);
-    toast.success("Message received. We'll be in touch within 1 business day.");
   };
 
   const inputStyle = {

@@ -1,32 +1,23 @@
 import { useState } from "react";
 import { ArrowRight, Instagram, Facebook } from "lucide-react";
 import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 const LOGO_DARK = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663375502795/hMvCPNXLdbYPQXii.png";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const subscribe = trpc.subscribers.add.useMutation();
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    // Send newsletter signup via EmailJS
-    // Set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_NEWSLETTER_TEMPLATE_ID, VITE_EMAILJS_PUBLIC_KEY in your .env
+    // Stored server-side (subscribers table + owner notification).
     try {
-      const emailjs = await import("@emailjs/browser");
-      await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID ?? "YOUR_SERVICE_ID",
-        import.meta.env.VITE_EMAILJS_NEWSLETTER_TEMPLATE_ID ?? "YOUR_NEWSLETTER_TEMPLATE_ID",
-        {
-          subscriber_email: email,
-          signup_date: new Date().toLocaleDateString("en-AU"),
-          to_email: "hello@renicosmetics.com.au",
-        },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY ?? "YOUR_PUBLIC_KEY"
-      );
+      await subscribe.mutateAsync({ email, source: "footer" });
     } catch (err) {
-      console.warn("EmailJS newsletter send failed:", err);
+      console.warn("Newsletter signup failed:", err);
     }
     setSubscribed(true);
     setEmail("");

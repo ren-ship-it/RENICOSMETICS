@@ -1,17 +1,28 @@
 import { useState, useEffect } from "react";
 import { X, Check } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 interface Props {
   productName: string;
+  /** Stable product slug for the waitlist key. Falls back to a slugified name. */
+  productSlug?: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function NotifyMeModal({ productName, isOpen, onClose }: Props) {
+function slugify(s: string): string {
+  return s
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[™®©]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+export default function NotifyMeModal({ productName, productSlug, isOpen, onClose }: Props) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const joinWaitlist = trpc.waitlist.add.useMutation();
 
   // Close on Escape
   useEffect(() => {
@@ -45,27 +56,18 @@ export default function NotifyMeModal({ productName, isOpen, onClose }: Props) {
     setError("");
     setLoading(true);
 
-    // Send waitlist notification via EmailJS
-    // Replace SERVICE_ID, TEMPLATE_ID, and PUBLIC_KEY with your EmailJS credentials
-    // Template should include {{user_email}}, {{product_name}}, and {{signup_date}} variables
+    // Stored server-side (waitlist table + owner notification).
     try {
-      const emailjs = await import("@emailjs/browser");
-      await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID ?? "YOUR_SERVICE_ID",
-        import.meta.env.VITE_EMAILJS_WAITLIST_TEMPLATE_ID ?? "YOUR_WAITLIST_TEMPLATE_ID",
-        {
-          user_email: email,
-          product_name: productName,
-          signup_date: new Date().toLocaleDateString("en-AU"),
-          to_email: "hello@renicosmetics.com.au",
-        },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY ?? "YOUR_PUBLIC_KEY"
-      );
+      await joinWaitlist.mutateAsync({
+        email,
+        productSlug: productSlug ?? slugify(productName),
+        productName,
+      });
     } catch (err) {
-      console.warn("EmailJS waitlist send failed:", err);
+      console.warn("Waitlist signup failed:", err);
     }
 
-    // Always store locally as a fallback
+    // Also store locally as a resilience fallback.
     try {
       const existing = JSON.parse(localStorage.getItem("reni_waitlist") ?? "[]");
       existing.push({ email, product: productName, date: new Date().toISOString() });

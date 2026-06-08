@@ -14,7 +14,7 @@ const FILTERS = ["All", "Phase 1 — Available Now", "Phase 2 — Coming Soon"];
 
 export default function ShopPage() {
   const [filter, setFilter] = useState("All");
-  const [notifyProduct, setNotifyProduct] = useState<string | null>(null);
+  const [notifyProduct, setNotifyProduct] = useState<{ name: string; slug: string } | null>(null);
   const [addedId, setAddedId] = useState<string | null>(null);
   const { addItem, isInCart } = useCart();
   const { products } = useStorefrontProducts();
@@ -37,7 +37,7 @@ export default function ShopPage() {
     e.preventDefault();
     e.stopPropagation();
     if (!product.available) {
-      setNotifyProduct(product.name);
+      setNotifyProduct({ name: product.name, slug: product.slug });
       return;
     }
     addItem({
@@ -285,7 +285,8 @@ export default function ShopPage() {
 
         {/* Notify Me modal */}
         <NotifyMeModal
-          productName={notifyProduct ?? ""}
+          productName={notifyProduct?.name ?? ""}
+          productSlug={notifyProduct?.slug}
           isOpen={!!notifyProduct}
           onClose={() => setNotifyProduct(null)}
         />

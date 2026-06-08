@@ -17,6 +17,7 @@ import { getSessionCookieOptions } from "../_core/cookies";
 import { ENV } from "../_core/env";
 import { deriveRequestContext } from "../analytics/pseudonymise";
 import { getOrdersByCustomer } from "../db";
+import { notifyOwner } from "../_core/notification";
 import { sendEmail, isEmailConfigured, appOrigin } from "../email";
 import { welcomeEmail, passwordResetEmail } from "../email/templates";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "./password";
@@ -226,6 +227,43 @@ export const customerAuthRouter = router({
   myOrders: customerProcedure.query(async ({ ctx }) => {
     return getOrdersByCustomer(ctx.customer.email);
   }),
+
+  // ── Data subject rights (APP 12 access / APP 13 correction; deletion req) ──
+  exportMyData: customerProcedure.query(async ({ ctx }) => {
+    const c = ctx.customer;
+    const [orders, securityEvents] = await Promise.all([
+      getOrdersByCustomer(c.email),
+      store.recentAuthEvents(c.id, 50),
+    ]);
+    return {
+      exportedAt: new Date().toISOString(),
+      profile: publicCustomer(c),
+      orders,
+      securityEvents: securityEvents.map(e => ({ event: e.event, success: e.success, at: e.createdAt })),
+      note: "This is the personal information we hold that is linked to your account. Order records are retained for 7 years to meet Australian tax law.",
+    };
+  }),
+
+  requestAccountDeletion: customerProcedure
+    .input(z.object({ reason: z.string().max(500).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const c = ctx.customer;
+      await store.auditAuth({
+        actorType: "customer",
+        actorId: String(c.id),
+        email: c.email,
+        event: "deletion_request",
+        success: true,
+        detail: input.reason?.slice(0, 200),
+      });
+      // Notify the team to action the request (some data must be retained for
+      // tax/legal reasons; the rest is deleted or de-identified).
+      await notifyOwner({
+        title: `Account deletion request: ${c.email}`,
+        content: `Customer ${c.id} (${c.email}) requested account deletion.\nReason: ${input.reason ?? "n/a"}\nAction within 30 days per the Privacy Policy; retain order records as required by law, de-identify the rest.`,
+      }).catch(() => {});
+      return { ok: true, message: "We've received your request and will action it within 30 days." };
+    }),
 
   securityLog: customerProcedure.query(async ({ ctx }) => {
     const events = await store.recentAuthEvents(ctx.customer.id, 10);
