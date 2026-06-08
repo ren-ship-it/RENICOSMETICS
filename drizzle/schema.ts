@@ -430,3 +430,14 @@ export const reviews = mysqlTable("reviews", {
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = typeof reviews.$inferInsert;
+
+// ─── Media Library (admin uploads) ──────────────────────────────────────────
+export const mediaAssets = mysqlTable("mediaAssets", {
+  id: int("id").autoincrement().primaryKey(),
+  url: text("url").notNull(),
+  filename: varchar("filename", { length: 256 }),
+  contentType: varchar("contentType", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MediaAsset = typeof mediaAssets.$inferSelect;

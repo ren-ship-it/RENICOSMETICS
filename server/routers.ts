@@ -16,6 +16,7 @@ import { customerAuthRouter } from "./auth/router";
 import { adminAuthRouter } from "./auth/adminRouter";
 import { contentRouter } from "./content/router";
 import { reviewsRouter } from "./reviews/router";
+import { mediaRouter } from "./media/router";
 import { parseAssistantReply } from "./ai/replyParser";
 import { ADMIN_COOKIE_NAME } from "./auth/adminSession";
 
@@ -205,6 +206,9 @@ export const appRouter = router({
 
   // Product reviews (public submit/list + admin moderation).
   reviews: reviewsRouter,
+
+  // Admin media library (image uploads to object storage).
+  media: mediaRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
