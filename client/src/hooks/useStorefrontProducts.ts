@@ -40,9 +40,11 @@ type DbProduct = {
   stockQty: number;
 };
 
-function isAvailable(db: Pick<DbProduct, "available" | "stockQty">): boolean {
-  // Sold out (zero stock) renders as unavailable so the waitlist/notify flow shows.
-  return db.available !== false && db.stockQty > 0;
+// Sold out (zero stock, but still listed) renders as unavailable so the
+// waitlist/notify flow shows. (`available: false` means hidden entirely and is
+// filtered out before this is reached.)
+function isAvailable(db: Pick<DbProduct, "stockQty">): boolean {
+  return db.stockQty > 0;
 }
 
 function merge(base: Product, db: DbProduct | undefined): StorefrontProduct {
@@ -100,11 +102,17 @@ export function useStorefrontProducts() {
 
   const products = useMemo<StorefrontProduct[]>(() => {
     const rows = (query.data ?? []) as unknown as DbProduct[];
-    const bySlug = new Map(rows.map(r => [r.slug, r]));
-    const staticSlugs = new Set(PRODUCTS.map(p => p.slug));
-    const merged = PRODUCTS.map(base => merge(base, bySlug.get(base.slug)));
-    const dbOnly = rows.filter(r => !staticSlugs.has(r.slug)).map(fromDb);
-    return [...merged, ...dbOnly];
+    // DB empty/unreachable → fall back to the static catalogue (storefront never breaks).
+    if (rows.length === 0) return PRODUCTS;
+    // DB is authoritative once populated: it controls visibility (available=false
+    // hides a product entirely) and overrides presentational defaults by slug.
+    const staticBySlug = new Map(PRODUCTS.map(p => [p.slug, p]));
+    return rows
+      .filter(r => r.available !== false)
+      .map(r => {
+        const base = staticBySlug.get(r.slug);
+        return base ? merge(base, r) : fromDb(r);
+      });
   }, [query.data]);
 
   const bySlug = useMemo(() => new Map(products.map(p => [p.slug, p])), [products]);

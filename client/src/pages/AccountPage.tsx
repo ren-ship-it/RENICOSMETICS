@@ -151,6 +151,51 @@ const STATUS_COLOR: Record<string, string> = {
   delivered: SAGE, cancelled: "#b3261e", refunded: "#888",
 };
 
+function OrderDetailModal({ id, onClose }: { id: number; onClose: () => void }) {
+  const order = trpc.customerAuth.orderDetail.useQuery({ id });
+  const o = order.data;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(28,28,30,0.6)" }} onClick={onClose}>
+      <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold" style={{ color: OBSIDIAN }}>{o ? o.orderNumber : "Order"}</h3>
+          <button onClick={onClose} aria-label="Close" className="text-[rgba(45,44,44,0.5)] hover:opacity-70">✕</button>
+        </div>
+        {order.isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="animate-spin" style={{ color: OBSIDIAN }} /></div>
+        ) : !o ? (
+          <p className="text-sm" style={{ color: "rgba(45,44,44,0.6)" }}>Order not found.</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px]" style={{ color: "rgba(45,44,44,0.45)" }}>{new Date(o.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</span>
+              <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: STATUS_COLOR[o.status] ?? "#888" }}>{o.status}</span>
+            </div>
+            <div className="space-y-2 mb-4">
+              {o.items.map(it => (
+                <div key={it.id} className="flex justify-between text-sm">
+                  <span style={{ color: "rgba(45,44,44,0.75)" }}>{it.quantity}× {it.productName}</span>
+                  <span style={{ color: OBSIDIAN }}>${Number(it.lineTotal).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-3 space-y-1 text-sm" style={{ borderColor: "rgba(45,44,44,0.1)" }}>
+              <div className="flex justify-between" style={{ color: "rgba(45,44,44,0.6)" }}><span>Subtotal</span><span>${Number(o.subtotal).toFixed(2)}</span></div>
+              <div className="flex justify-between" style={{ color: "rgba(45,44,44,0.6)" }}><span>Shipping</span><span>{Number(o.shippingCost) === 0 ? "Free" : `$${Number(o.shippingCost).toFixed(2)}`}</span></div>
+              <div className="flex justify-between font-semibold" style={{ color: OBSIDIAN }}><span>Total</span><span>${Number(o.total).toFixed(2)} {o.currency}</span></div>
+            </div>
+            {o.trackingNumber && (
+              <p className="text-[11px] mt-3" style={{ color: "rgba(45,44,44,0.55)" }}>
+                Tracking: {o.trackingUrl ? <a href={o.trackingUrl} target="_blank" rel="noreferrer" className="underline">{o.trackingNumber}</a> : o.trackingNumber}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
   const { customer } = useCustomerAuth();
   const utils = trpc.useUtils();
@@ -165,6 +210,7 @@ function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
   const [saved, setSaved] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deletionDone, setDeletionDone] = useState(false);
+  const [openOrderId, setOpenOrderId] = useState<number | null>(null);
   const deletion = trpc.customerAuth.requestAccountDeletion.useMutation();
 
   const exportData = async () => {
@@ -250,7 +296,7 @@ function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
         ) : (
           <div className="space-y-2">
             {orders.data!.map(o => (
-              <div key={o.id} className="flex items-center justify-between p-4 rounded-lg border" style={{ borderColor: "rgba(45,44,44,0.1)" }}>
+              <button key={o.id} onClick={() => setOpenOrderId(o.id)} className="w-full flex items-center justify-between p-4 rounded-lg border text-left transition-colors hover:bg-[rgba(45,44,44,0.03)]" style={{ borderColor: "rgba(45,44,44,0.1)" }}>
                 <div>
                   <p className="text-sm font-medium" style={{ color: OBSIDIAN }}>{o.orderNumber}</p>
                   <p className="text-[11px]" style={{ color: "rgba(45,44,44,0.45)" }}>{new Date(o.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</p>
@@ -259,10 +305,11 @@ function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
                   <p className="text-sm font-medium" style={{ color: OBSIDIAN }}>${Number(o.total).toFixed(2)}</p>
                   <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: STATUS_COLOR[o.status] ?? "#888" }}>{o.status}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
+        {openOrderId !== null && <OrderDetailModal id={openOrderId} onClose={() => setOpenOrderId(null)} />}
       </section>
 
       {/* Communication preferences */}

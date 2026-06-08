@@ -16,7 +16,7 @@ import { publicProcedure, customerProcedure, router } from "../_core/trpc";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { ENV } from "../_core/env";
 import { deriveRequestContext } from "../analytics/pseudonymise";
-import { getOrdersByCustomer } from "../db";
+import { getOrdersByCustomer, getOrderWithItems } from "../db";
 import { notifyOwner } from "../_core/notification";
 import { sendEmail, isEmailConfigured, appOrigin } from "../email";
 import { welcomeEmail, passwordResetEmail } from "../email/templates";
@@ -227,6 +227,17 @@ export const customerAuthRouter = router({
   myOrders: customerProcedure.query(async ({ ctx }) => {
     return getOrdersByCustomer(ctx.customer.email);
   }),
+
+  // Single order with line items — ownership-checked against the session.
+  orderDetail: customerProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const order = await getOrderWithItems(input.id);
+      if (!order || order.customerEmail.toLowerCase() !== ctx.customer.email.toLowerCase()) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
+      }
+      return order;
+    }),
 
   // ── Data subject rights (APP 12 access / APP 13 correction; deletion req) ──
   exportMyData: customerProcedure.query(async ({ ctx }) => {
